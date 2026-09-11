@@ -53,6 +53,9 @@ class DatabaseSettings(BaseSettings):
     # security is only enforced against non-owners unless FORCE is set, and relying
     # on FORCE alone leaves no margin for error.
     app_user: str = "jobtrack_app"
+    # The schema owner. Alembic connects as this and nothing else does, so a bug in
+    # request-handling code cannot reach a connection that RLS does not constrain.
+    owner_user: str = "jobtrack_owner"
 
     # Local only.
     host: str = "127.0.0.1"
@@ -60,6 +63,7 @@ class DatabaseSettings(BaseSettings):
     # Postgres on the same machine.
     port: int = 5433
     password: SecretStr = SecretStr("jobtrack")
+    owner_password: SecretStr = SecretStr("jobtrack")
 
     # Cloud only. Format: projects/P/locations/R/clusters/C/instances/I
     alloydb_instance_uri: str = ""

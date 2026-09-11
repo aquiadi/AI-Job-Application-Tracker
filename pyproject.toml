@@ -80,6 +80,9 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # Tests assert, use fixtures positionally, and hardcode sample values on purpose.
 "**/tests/**" = ["S101", "ANN201", "ANN001", "S105", "S106"]
+# Alembic writes these. Column definitions are one long line each, and reflowing
+# generated code by hand is churn that makes the next autogenerate diff unreadable.
+"packages/core/src/jobtrack_core/db/migrations/versions/*" = ["E501"]
 # Eval and ops scripts are CLIs; stdout is their interface.
 "evals/**" = ["T20"]
 "scripts/**" = ["T20"]
@@ -140,6 +143,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = [
   "packages/core/tests",
+  "packages/core/tests/integration",
   "services/api/tests",
   "services/worker/tests",
 ]

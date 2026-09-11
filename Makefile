@@ -89,9 +89,27 @@ typecheck: ## mypy --strict over service and package code
 test: ## Run unit tests (no network, no credentials)
 	$(UV) run pytest -m "not integration and not live"
 
+.PHONY: test-integration
+test-integration: up migrate ## Tests needing the local stack, including cross-tenant RLS
+	$(UV) run pytest -m integration
+
 .PHONY: web-check
 web-check: ## Typecheck, lint, format-check and contrast-check the web app
 	cd $(WEB_DIR) && npm run check
+
+# --------------------------------------------------------------------------
+# Database
+# --------------------------------------------------------------------------
+
+.PHONY: migrate
+migrate: ## Apply migrations to the local database and the test database
+	$(UV) run alembic -c packages/core/alembic.ini upgrade head
+	DB_NAME=jobtrack_test $(UV) run alembic -c packages/core/alembic.ini upgrade head
+
+.PHONY: migration
+migration: ## Create a migration: make migration m="add nudges table"
+	@test -n "$(m)" || { echo 'usage: make migration m="describe the change"'; exit 1; }
+	$(UV) run alembic -c packages/core/alembic.ini revision --autogenerate -m "$(m)"
 
 # --------------------------------------------------------------------------
 # Google Cloud
