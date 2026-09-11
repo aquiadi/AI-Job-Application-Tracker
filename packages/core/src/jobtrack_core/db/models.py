@@ -29,6 +29,7 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Computed,
     Date,
     DateTime,
     ForeignKey,
@@ -43,7 +44,7 @@ from sqlalchemy import (
 # Aliased: several models declare a column named `text`, which shadows the function
 # inside the class body and turns `text(...)` into a call on a MappedColumn.
 from sqlalchemy import text as sql_text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from jobtrack_core.db.base import (
@@ -102,6 +103,51 @@ class TenantMixin:
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
+    )
+
+
+def _search_index(table: str) -> Index:
+    """GIN over the generated tsvector. The lexical arm of ADR 12."""
+    return Index(f"ix_{table}_search", "search", postgresql_using="gin")
+
+
+def _vector_index(table: str) -> Index:
+    """HNSW with cosine ops.
+
+    The operator class has to match the distance operator the scoring query uses. A
+    mismatch does not error — it leaves the index unused and turns every scoring pass
+    into a sequential scan over every profile item.
+
+    m and ef_construction are pgvector's defaults; tuning them without a benchmark
+    would be guessing, and that benchmark is deferred in ROADMAP.md.
+    """
+    return Index(
+        f"ix_{table}_embedding",
+        "embedding",
+        postgresql_using="hnsw",
+        postgresql_with={"m": 16, "ef_construction": 64},
+        postgresql_ops={"embedding": "vector_cosine_ops"},
+    )
+
+
+class SearchableMixin:
+    """A Postgres-maintained `tsvector` over the row's `text` column.
+
+    The lexical arm of hybrid retrieval (ADR 12). Generated and stored, so there is no
+    application code that can forget to keep it current, and `ts_rank_cd` can read the
+    value rather than only filter on it.
+
+    `Computed` tells SQLAlchemy the database owns the value, so it is never sent in an
+    INSERT — which Postgres rejects outright for a generated column.
+    """
+
+    # Nullable because Postgres does not infer NOT NULL for a generated column, even
+    # from a NOT NULL source. Declaring otherwise makes the model disagree with the
+    # database, which `alembic check` correctly reports as drift.
+    search: Mapped[str | None] = mapped_column(
+        TSVECTOR,
+        Computed("to_tsvector('english', text)", persisted=True),
+        nullable=True,
     )
 
 
@@ -170,7 +216,7 @@ class Profile(Base, TenantMixin, TimestampMixin):
     links: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default="[]")
 
 
-class ProfileItem(Base, TenantMixin, TimestampMixin, EmbeddingMixin):
+class ProfileItem(Base, TenantMixin, TimestampMixin, EmbeddingMixin, SearchableMixin):
     """One bullet, project, skill or qualification, embedded on its own.
 
     Granularity is the point. A whole resume as one vector answers "is this person
@@ -180,6 +226,10 @@ class ProfileItem(Base, TenantMixin, TimestampMixin, EmbeddingMixin):
     """
 
     __tablename__ = "profile_items"
+    __table_args__ = (
+        _search_index("profile_items"),
+        _vector_index("profile_items"),
+    )
 
     id: Mapped[uuid.UUID] = uuid_pk()
     profile_id: Mapped[uuid.UUID] = mapped_column(
@@ -271,7 +321,7 @@ class Job(Base, TenantMixin, TimestampMixin):
     responsibilities: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default="[]")
 
 
-class JobRequirement(Base, TenantMixin, TimestampMixin, EmbeddingMixin):
+class JobRequirement(Base, TenantMixin, TimestampMixin, EmbeddingMixin, SearchableMixin):
     """One requirement from a posting, embedded on its own.
 
     `kind` is what makes the score weighted rather than a flat percentage: a missing
@@ -279,6 +329,10 @@ class JobRequirement(Base, TenantMixin, TimestampMixin, EmbeddingMixin):
     """
 
     __tablename__ = "job_requirements"
+    __table_args__ = (
+        _search_index("job_requirements"),
+        _vector_index("job_requirements"),
+    )
 
     id: Mapped[uuid.UUID] = uuid_pk()
     job_id: Mapped[uuid.UUID] = mapped_column(

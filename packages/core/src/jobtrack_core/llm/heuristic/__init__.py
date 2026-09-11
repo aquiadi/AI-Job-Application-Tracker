@@ -27,10 +27,18 @@ from jobtrack_core.llm.client import (
     Usage,
 )
 from jobtrack_core.llm.heuristic.embed import embed_text
+from jobtrack_core.llm.heuristic.resume import parse as parse_resume
 from jobtrack_core.llm.heuristic.segment import HEURISTIC_MODEL, extract
 from jobtrack_core.llm.prompts import RenderedPrompt
+from jobtrack_core.profile.schemas import ParsedResume
 
-__all__ = ["HEURISTIC_MODEL", "HeuristicLlmClient", "embed_text", "extract"]
+__all__ = [
+    "HEURISTIC_MODEL",
+    "HeuristicLlmClient",
+    "embed_text",
+    "extract",
+    "parse_resume",
+]
 
 #: Maps a prompt id to the function that answers it from its rendered variables.
 Handler = Callable[[RenderedPrompt], BaseModel]
@@ -44,7 +52,14 @@ def _extract_jd(prompt: RenderedPrompt) -> ExtractedPosting:
     )
 
 
-DEFAULT_HANDLERS: dict[str, Handler] = {"extract_jd": _extract_jd}
+def _parse_resume(prompt: RenderedPrompt) -> ParsedResume:
+    return parse_resume(prompt.values.get("resume", ""))
+
+
+DEFAULT_HANDLERS: dict[str, Handler] = {
+    "extract_jd": _extract_jd,
+    "parse_resume": _parse_resume,
+}
 
 
 @dataclass(slots=True)

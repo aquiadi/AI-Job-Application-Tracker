@@ -78,7 +78,7 @@ def auth(subject: str) -> dict[str, str]:
 @pytest.fixture
 def client(
     isolated_environment: pytest.MonkeyPatch,
-    migrated_database: None,
+    clean_database: None,
     db_port: str,
     tmp_path: Path,
 ) -> Iterator[TestClient]:

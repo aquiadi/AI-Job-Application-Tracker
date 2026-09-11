@@ -20,6 +20,10 @@ dependencies = [
   # Declared rather than inherited from google-genai: the ATS adapters are a
   # first-class use of it, and a transitive dependency can be dropped by an upgrade.
   "httpx>=0.28",
+  # Pure Python, no native build, and it only has to pull a text layer out of a
+  # resume. A scanned resume has no text layer and is refused with a message
+  # saying so rather than silently importing nothing.
+  "pypdf>=6.1",
 ]
 
 [build-system]

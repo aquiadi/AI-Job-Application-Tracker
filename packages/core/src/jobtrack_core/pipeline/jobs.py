@@ -227,7 +227,7 @@ async def embed(
             requirement.embedding_task_type = result.task_type.value
             requirement.embedded_at = embedded_at
 
-        await _record_call(
+        await record_call(
             session,
             user_id=user_id,
             model=result.model,
@@ -312,7 +312,7 @@ async def _call_model(
         company=posting.company or "not stated",
     )
     result = await client.generate_structured(prompt, ExtractedPosting)
-    await _record_call(
+    await record_call(
         session,
         user_id=user_id,
         model=result.model,
@@ -374,7 +374,7 @@ async def _replace_requirements(
     await session.flush()
 
 
-async def _record_call(
+async def record_call(
     session: AsyncSession,
     *,
     user_id: uuid.UUID,

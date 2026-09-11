@@ -7,6 +7,9 @@ dependencies = [
   "jobtrack-core",
   "fastapi>=0.121",
   "uvicorn[standard]>=0.38",
+  # Resume upload. FastAPI needs this for multipart/form-data and says so at
+  # import time rather than at request time, so it is a hard dependency.
+  "python-multipart>=0.0.20",
 ]
 
 [build-system]

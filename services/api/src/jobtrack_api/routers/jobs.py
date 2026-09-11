@@ -35,6 +35,7 @@ from jobtrack_core.events import JOB, EventType
 from jobtrack_core.ingest.adapters.base import IngestError
 from jobtrack_core.ingest.router import fetch_posting, parse_pasted
 from jobtrack_core.pipeline import jobs as pipeline
+from jobtrack_core.scoring.fit import Coverage, FitScore, score_job
 from jobtrack_core.storage import object_key
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -100,6 +101,39 @@ class JobDetail(JobSummary):
     hard_skills: list[str]
     responsibilities: list[str]
     requirements: list[RequirementOut]
+
+
+class MatchOut(BaseModel):
+    """One requirement and the evidence that answered it."""
+
+    requirement_id: uuid.UUID
+    requirement: str
+    kind: RequirementKind
+    coverage: Coverage
+    #: Cosine similarity of the chosen evidence. Shown because the judgement is a
+    #: threshold on it, and hiding it would make the threshold unarguable.
+    similarity: float
+    evidence_item_id: uuid.UUID | None
+    evidence: str | None
+
+
+class ScoreOut(BaseModel):
+    """The breakdown, and the number computed from it."""
+
+    job_id: uuid.UUID
+    score: int
+    must_total: int
+    must_covered: int
+    nice_total: int
+    nice_covered: int
+    matches: list[MatchOut]
+    #: False when the posting has no embedded requirements or the profile has no
+    #: reviewed items. Distinct from a genuine zero, which means something else
+    #: entirely to whoever is reading the page.
+    scorable: bool
+    #: The space the comparison ran in. Under the local backend this is `heuristic`,
+    #: which is lexical rather than semantic, and the interface says so.
+    embedding_model: str | None
 
 
 class SavedJob(BaseModel):
@@ -237,6 +271,47 @@ async def save_job(
     await session.execute(update(Job).where(Job.id == result.job_id).values(raw_gcs_uri=uri))
 
     return SavedJob(id=result.job_id, status=JobStatus.QUEUED, created=True)
+
+
+@router.get(
+    "/{job_id}/score",
+    summary="How the profile matches this posting",
+    responses=error_responses(UnauthenticatedError, NotFoundError),
+)
+async def get_score(job_id: uuid.UUID, session: TenantSession) -> ScoreOut:
+    """Score this posting against the caller's reviewed profile items.
+
+    Computed on read rather than stored. The inputs change whenever the user edits a
+    profile item, and a cached score is a number that silently stops matching what it
+    claims to describe. It is one query.
+    """
+    job = (await session.execute(select(Job.id).where(Job.id == job_id))).scalar_one_or_none()
+    if job is None:
+        raise NotFoundError("job")
+
+    result: FitScore = await score_job(session, job_id=job_id)
+    return ScoreOut(
+        job_id=job_id,
+        score=result.score,
+        must_total=result.must_total,
+        must_covered=result.must_covered,
+        nice_total=result.nice_total,
+        nice_covered=result.nice_covered,
+        scorable=result.is_scorable,
+        embedding_model=result.embedding_model,
+        matches=[
+            MatchOut(
+                requirement_id=match.requirement_id,
+                requirement=match.requirement,
+                kind=match.kind,
+                coverage=match.coverage,
+                similarity=match.similarity,
+                evidence_item_id=match.evidence_item_id,
+                evidence=match.evidence,
+            )
+            for match in result.matches
+        ],
+    )
 
 
 @router.post(
