@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from jobtrack_core.db.enums import ProfileItemKind
 
@@ -22,6 +22,13 @@ from jobtrack_core.db.enums import ProfileItemKind
 #: whose text layer interleaves two columns.
 MAX_ITEMS = 200
 MAX_ITEM_CHARS = 600
+
+
+#: A skill can be one character. "R", "Go", "C#" and "ML" are all real, and a blanket
+#: three-character minimum silently drops the most specific tokens a posting screens on.
+MIN_SKILL_CHARS = 1
+#: A bullet, project or qualification of one or two characters is a parsing artefact.
+MIN_PROSE_CHARS = 3
 
 
 class ParsedItem(BaseModel):
@@ -35,7 +42,7 @@ class ParsedItem(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    text: str = Field(min_length=3, max_length=MAX_ITEM_CHARS)
+    text: str = Field(min_length=MIN_SKILL_CHARS, max_length=MAX_ITEM_CHARS)
     kind: ProfileItemKind = Field(
         description=(
             "experience_bullet for something done in a role, project for personal or "
@@ -52,6 +59,17 @@ class ParsedItem(BaseModel):
     )
     ended_on: date | None = Field(default=None, description="Null if this is current")
 
+    @model_validator(mode="after")
+    def _prose_is_long_enough(self) -> ParsedItem:
+        """Only skills may be very short.
+
+        Enforced here rather than by a single field minimum, because the two cases
+        genuinely differ: "Go" is a skill and "Go" is not an experience bullet.
+        """
+        if self.kind is not ProfileItemKind.SKILL and len(self.text.strip()) < MIN_PROSE_CHARS:
+            raise ValueError(f"a {self.kind.value} needs at least {MIN_PROSE_CHARS} characters")
+        return self
+
 
 class ParsedResume(BaseModel):
     """Everything the import is allowed to return."""
@@ -67,3 +85,17 @@ class ParsedResume(BaseModel):
     @classmethod
     def _cap(cls, value: list[ParsedItem]) -> list[ParsedItem]:
         return value[:MAX_ITEMS]
+
+
+class NudgeDraft(BaseModel):
+    """A drafted follow-up email. Never sent by this system.
+
+    No recipient field, and no signature. The user sends it themselves from their own
+    client, which is what "nothing is sent on your behalf" means in practice rather
+    than as a promise.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    subject: str = Field(min_length=3, max_length=200)
+    body: str = Field(min_length=20, max_length=2000)

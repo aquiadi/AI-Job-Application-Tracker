@@ -36,6 +36,7 @@ from jobtrack_core.ingest.adapters.base import IngestError
 from jobtrack_core.ingest.router import fetch_posting, parse_pasted
 from jobtrack_core.pipeline import jobs as pipeline
 from jobtrack_core.scoring.fit import Coverage, FitScore, score_job
+from jobtrack_core.scoring.skills import skill_gap
 from jobtrack_core.storage import object_key
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -121,6 +122,29 @@ class MatchOut(BaseModel):
     evidence: str | None
 
 
+class SkillEvidence(BaseModel):
+    """A named technology the posting asks for, and the item that proves it."""
+
+    skill: str
+    evidence: str
+    evidence_item_id: uuid.UUID
+
+
+class SkillsOut(BaseModel):
+    """Named technologies, split by whether the profile can show them.
+
+    Separate from the requirement matches because the two behave differently. A
+    requirement is prose and is compared by meaning; a skill is a token, and a near
+    miss is a miss — someone who has used Docker has not used Kubernetes.
+    """
+
+    have: list[SkillEvidence]
+    lack: list[str]
+    #: In the profile and not asked for here. Not a weakness: it is what could
+    #: reasonably be cut from a resume tailored to this role.
+    unused: list[str]
+
+
 class ScoreOut(BaseModel):
     """The breakdown, and the number computed from it."""
 
@@ -131,6 +155,7 @@ class ScoreOut(BaseModel):
     nice_total: int
     nice_covered: int
     matches: list[MatchOut]
+    skills: SkillsOut
     #: False when the posting has no embedded requirements or the profile has no
     #: reviewed items. Distinct from a genuine zero, which means something else
     #: entirely to whoever is reading the page.
@@ -296,6 +321,7 @@ async def get_score(job_id: uuid.UUID, session: TenantSession) -> ScoreOut:
         raise NotFoundError("job")
 
     result: FitScore = await score_job(session, job_id=job_id)
+    gap = await skill_gap(session, job_id=job_id)
     return ScoreOut(
         job_id=job_id,
         score=result.score,
@@ -317,6 +343,18 @@ async def get_score(job_id: uuid.UUID, session: TenantSession) -> ScoreOut:
             )
             for match in result.matches
         ],
+        skills=SkillsOut(
+            have=[
+                SkillEvidence(
+                    skill=match.skill,
+                    evidence=match.evidence,
+                    evidence_item_id=match.evidence_item_id,
+                )
+                for match in gap.have
+            ],
+            lack=list(gap.lack),
+            unused=list(gap.unused),
+        ),
     )
 
 

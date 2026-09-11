@@ -123,6 +123,14 @@ migration: ## Create a migration: make migration m="add nudges table"
 # Google Cloud
 # --------------------------------------------------------------------------
 
+.PHONY: cost-report
+cost-report: ## What has actually been spent on model calls, from llm_calls
+	$(PY) python scripts/cost_report.py
+
+.PHONY: nudge-sweep
+nudge-sweep: ## Draft follow-ups for applications that have gone quiet
+	curl -fsS -X POST http://127.0.0.1:8080/internal/nudges/sweep | python3 -m json.tool
+
 .PHONY: sandbox-check
 sandbox-check: ## Verify the sandbox project can run this system
 	./scripts/sandbox_check.sh

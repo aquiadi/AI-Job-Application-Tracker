@@ -79,7 +79,9 @@ _SALARY = re.compile(
 )
 _CURRENCY_SYMBOLS = {"$": "USD", "£": "GBP", "€": "EUR"}
 
-#: Matched as whole words against the posting. Deliberately a fixed vocabulary: a
+#: Matched as whole words against the posting, and re-used by the grounding
+#: validator so that "names a technology" means the same thing in both places.
+#: Deliberately a fixed vocabulary: a
 #: baseline that discovered new skills would be a worse baseline, because its behaviour
 #: would change with its input rather than staying a constant to measure against.
 _SKILLS: tuple[str, ...] = (
@@ -161,7 +163,7 @@ _SKILLS: tuple[str, ...] = (
     "linux",
     "git",
 )
-_SKILL_PATTERNS = tuple(
+SKILL_VOCABULARY = tuple(
     (skill, re.compile(rf"(?<![\w.]){re.escape(skill)}(?![\w.])", re.IGNORECASE))
     for skill in _SKILLS
 )
@@ -283,4 +285,4 @@ def _salary(body: str) -> tuple[Decimal | None, Decimal | None, str | None]:
 
 
 def _skills(body: str) -> list[str]:
-    return [skill for skill, pattern in _SKILL_PATTERNS if pattern.search(body)]
+    return [skill for skill, pattern in SKILL_VOCABULARY if pattern.search(body)]

@@ -24,6 +24,10 @@ dependencies = [
   # resume. A scanned resume has no text layer and is refused with a message
   # saying so rather than silently importing nothing.
   "pypdf>=6.1",
+  # Pure Python PDF generation, no native build and no headless browser in the
+  # image. A resume is text in one column; the typography a browser would add is
+  # not worth several hundred megabytes of Chromium on Cloud Run.
+  "fpdf2>=2.8",
 ]
 
 [build-system]

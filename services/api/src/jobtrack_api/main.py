@@ -18,7 +18,7 @@ from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
 from jobtrack_api.errors import install_error_handlers
-from jobtrack_api.routers import applications, jobs, me, profile
+from jobtrack_api.routers import applications, documents, jobs, me, profile
 from jobtrack_core import __version__
 from jobtrack_core.auth import FirebaseTokenVerifier
 from jobtrack_core.config import Settings, get_settings
@@ -110,6 +110,7 @@ app.include_router(me.router)
 app.include_router(profile.router)
 app.include_router(jobs.router)
 app.include_router(applications.router)
+app.include_router(documents.router)
 
 
 @app.get("/healthz", tags=["health"], summary="Liveness check")

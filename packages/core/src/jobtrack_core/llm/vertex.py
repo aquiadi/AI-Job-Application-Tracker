@@ -25,7 +25,7 @@ import json
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from google import genai
 from google.genai import types
@@ -180,7 +180,14 @@ class VertexLlmClient:
             batch = list(texts[offset : offset + EMBED_BATCH_LIMIT])
             try:
                 response = await self._embed.aio.models.embed_content(
-                    model=model, contents=batch, config=config
+                    # `list` is invariant, so a list[str] is not a
+                    # list[str | Part | ...] even though every element is
+                    # acceptable to the SDK. The cast asserts what the loop
+                    # already guarantees rather than widening `batch` itself,
+                    # which is used as a sized list below.
+                    model=model,
+                    contents=cast("types.ContentListUnion", batch),
+                    config=config,
                 )
             except Exception as exc:  # See the note in _call.
                 raise LlmError(f"Vertex embed_content failed: {type(exc).__name__}") from exc
