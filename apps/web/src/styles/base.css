@@ -1,0 +1,149 @@
+/* Element defaults. Components style themselves through CSS Modules; this file only
+ * sets the floor, so a plain <p> or <button> is already correct. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  font-weight: var(--weight-regular);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100dvh;
+}
+
+/* Figures line up in columns everywhere. In a tool whose whole job is comparing
+ * counts, dates, and scores down a column, proportional digits are a defect. */
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-heading);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-normal);
+}
+
+h2 {
+  font-size: var(--text-title);
+}
+
+h3 {
+  font-size: var(--text-lead);
+}
+
+h4 {
+  font-size: var(--text-body);
+}
+
+p {
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  color: var(--accent-strong);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Keyboard focus is always visible, and it is the same ring everywhere so it is
+ * learnable. `:focus-visible` rather than `:focus` keeps it off mouse clicks
+ * without ever removing it from keyboard navigation. */
+:focus-visible {
+  outline: var(--border-emphasis) solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+
+:where(button, [role="button"], summary) {
+  cursor: pointer;
+}
+
+:where(ul, ol)[role="list"] {
+  list-style: none;
+  padding: 0;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+hr {
+  border: 0;
+  border-top: var(--border-hairline) solid var(--rule);
+}
+
+code,
+kbd {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.92em;
+}
+
+::selection {
+  background: var(--accent-wash);
+  color: var(--ink);
+}
+
+/* Skip link: present in the DOM from the start, visible only when focused. */
+.skip-link {
+  position: absolute;
+  left: var(--space-5);
+  top: calc(var(--space-5) * -4);
+  z-index: 10;
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface);
+  color: var(--ink);
+  border: var(--border-hairline) solid var(--edge);
+  border-radius: var(--radius-control);
+  transition: top var(--duration-base) var(--easing);
+}
+
+.skip-link:focus-visible {
+  top: var(--space-5);
+}

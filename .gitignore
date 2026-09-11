@@ -1,0 +1,32 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Node
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Secrets and local configuration. .env.example is the committed template.
+.env
+.env.*
+!.env.example
+*-key.json
+*.pem
+
+# Generated eval output. Only evals/reports/latest.* is committed, by hand,
+# when a run is worth recording in the README.
+evals/reports/*
+!evals/reports/.gitkeep
+!evals/reports/latest.md
+!evals/reports/latest.json
+
+# OS
+.DS_Store

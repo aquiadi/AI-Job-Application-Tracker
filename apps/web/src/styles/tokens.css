@@ -1,0 +1,179 @@
+/*
+ * The design system. Every colour, size, and weight in the app resolves to a token
+ * declared here; no component invents its own value.
+ *
+ * The palette is built around one idea. The central object in this product is a
+ * requirement marked covered, partial, or missing against evidence in your resume.
+ * That is a judgement repeated dozens of times per posting, so it has to be readable
+ * at a glance and impossible to misread. Traffic-light colour fails both tests: it is
+ * unreadable for the ~8% of men with a red-green deficiency, and it makes an ordinary
+ * gap look like an error.
+ *
+ * So the evidence scale is not hue, it is ink. Covered is solid ink, partial is a wash
+ * with an inked edge, missing is the absence of ink. It reads correctly in greyscale,
+ * it distinguishes the three states by fill *and* by border style, and it keeps red
+ * free to mean what red should mean: something went wrong.
+ *
+ * Contrast is enforced, not asserted. `npm run check` runs scripts/check-contrast.mjs,
+ * which parses this file and fails the build if any documented pairing drops below
+ * WCAG AA.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---------------------------------------------------------------- type */
+
+  /* Two faces, each with a job. Plex Sans is the working face: it holds up at
+   * 12-14px in dense tables, its numerals are genuinely tabular, and its squared
+   * bowls stay distinct at small sizes. Spectral is reserved for the things that
+   * are documents — page titles, the fit-score numeral, and the rendered resume
+   * and cover-letter previews — because that is what this product produces. */
+  --font-text: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-spectral), ui-serif, Georgia, serif;
+
+  /* A ~1.2 modular scale, rounded to whole pixels so nothing lands on a half
+   * pixel in a table row. 14px is the body size; this is a tool you read for an
+   * hour, not a page you scan for ten seconds. */
+  --text-micro: 11px;
+  --text-small: 12px;
+  --text-body: 14px;
+  --text-lead: 17px;
+  --text-title: 20px;
+  --text-heading: 24px;
+  --text-display: 29px;
+  --text-hero: 35px;
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-body: 1.55;
+  /* Spectral needs more air than Plex Sans at the same size. */
+  --leading-serif: 1.62;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --tracking-tight: -0.011em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.01em;
+
+  /* Line length. Prose stops before it becomes hard to track back to. */
+  --measure: 68ch;
+  --measure-serif: 74ch;
+
+  /* -------------------------------------------------------------- spacing */
+
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 12px;
+  --space-6: 16px;
+  --space-7: 24px;
+  --space-8: 32px;
+  --space-9: 48px;
+  --space-10: 64px;
+
+  /* Radius carries meaning: 0 for structure that is part of the page grid,
+   * 3px for things you can click or type into, 6px for things that float above
+   * the page. One radius on everything would throw that information away. */
+  --radius-none: 0;
+  --radius-control: 3px;
+  --radius-panel: 6px;
+
+  --border-hairline: 1px;
+  --border-emphasis: 2px;
+
+  /* One shadow, for things that genuinely float: menus, dialogs, the drag preview
+   * on the board. Panels are defined by their border instead. */
+  --shadow-overlay:
+    0 8px 24px -8px color-mix(in srgb, var(--ink) 28%, transparent),
+    0 2px 6px -2px color-mix(in srgb, var(--ink) 16%, transparent);
+
+  /* --------------------------------------------------------------- colour */
+
+  --paper: #f2f4f3;
+  --surface: #ffffff;
+  --surface-sunken: #e9edeb;
+
+  --ink: #12201e;
+  --ink-muted: #55625f;
+  --ink-faint: #646e6b;
+
+  /* `rule` divides; `edge` bounds. A divider between two table rows is decorative
+   * — the rows read fine without it — so it can be quiet. The border of a text
+   * input or of a missing-evidence chip is the only thing telling you the control
+   * is there, which WCAG 1.4.11 requires to reach 3:1. Keeping them as one token
+   * meant either invisible inputs or heavy-handed dividers. */
+  --rule: #d5dbd8;
+  --rule-strong: #bcc5c2;
+  --edge: #7b8683;
+
+  --accent: #0e5a5e;
+  --accent-strong: #0a4447;
+  --accent-wash: #dce9e9;
+  --on-accent: #ffffff;
+
+  --alert: #9a2b1e;
+  --alert-wash: #f7e4e1;
+  --on-alert: #ffffff;
+
+  /* The evidence scale, spelled out so components never assemble it themselves. */
+  --evidence-covered-fill: var(--accent);
+  --evidence-covered-ink: var(--on-accent);
+  --evidence-covered-edge: var(--accent);
+
+  --evidence-partial-fill: var(--accent-wash);
+  --evidence-partial-ink: var(--ink);
+  --evidence-partial-edge: var(--accent);
+
+  --evidence-missing-fill: transparent;
+  --evidence-missing-ink: var(--ink-muted);
+  --evidence-missing-edge: var(--edge);
+
+  --focus-ring: var(--accent);
+  --focus-ring-offset: var(--paper);
+
+  --duration-fast: 90ms;
+  --duration-base: 160ms;
+  --easing: cubic-bezier(0.2, 0, 0.2, 1);
+
+  /* Layout */
+  --header-height: 52px;
+  --content-max: 1280px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0f1716;
+    --surface: #17211f;
+    --surface-sunken: #0b1211;
+
+    --ink: #e6ebe9;
+    --ink-muted: #a3afac;
+    --ink-faint: #8b9693;
+
+    --rule: #2a3634;
+    --rule-strong: #3d4c49;
+    --edge: #657370;
+
+    --accent: #5cc0c5;
+    --accent-strong: #7fd2d6;
+    --accent-wash: #16302f;
+    --on-accent: #07201f;
+
+    --alert: #e88778;
+    --alert-wash: #2c1714;
+    --on-alert: #2c1714;
+
+    --focus-ring-offset: var(--paper);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 1ms;
+    --duration-base: 1ms;
+  }
+}

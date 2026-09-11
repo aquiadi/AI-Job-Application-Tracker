@@ -1,0 +1,42 @@
+.shell {
+  display: grid;
+  grid-template-rows: var(--header-height) 1fr;
+  min-height: 100dvh;
+}
+
+/* Grid items default to `min-width: auto`, which means a single wide descendant
+ * pushes the auto column past the viewport and takes the whole document with it —
+ * the page then scrolls sideways on a phone. Pinning the items to 0 confines any
+ * overflow to the element that caused it. */
+.shell > * {
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding-inline: var(--space-6);
+  border-bottom: var(--border-hairline) solid var(--rule);
+  background: var(--surface);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: var(--text-lead);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+}
+
+.main {
+  padding: var(--space-8) var(--space-6) var(--space-10);
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--content-max);
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: var(--space-7) var(--space-5) var(--space-9);
+  }
+}

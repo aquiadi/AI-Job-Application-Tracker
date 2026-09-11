@@ -1,0 +1,166 @@
+[project]
+name = "jobtrack"
+version = "0.1.0"
+description = "Workspace root. Holds shared tooling configuration; ships no code."
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[dependency-groups]
+# The workspace members are listed here so that a plain `uv run` installs them.
+# `uv run` syncs the root project's own environment, and without these it happily
+# uninstalls the editable member packages that `uv sync --all-packages` just put
+# there — which shows up as an import error in tests rather than as a sync error.
+dev = [
+  "jobtrack-core",
+  "jobtrack-api",
+  "jobtrack-worker",
+  "jobtrack-evals",
+  "mypy>=1.18",
+  "pytest>=8.4",
+  "pytest-asyncio>=1.2",
+  "pytest-cov>=6.2",
+  "ruff>=0.14",
+  # starlette's TestClient requires httpx2; plain httpx raises a deprecation
+  # warning that this suite treats as a failure.
+  "httpx2>=2.12",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/*", "services/*", "evals"]
+
+[tool.uv.sources]
+jobtrack-core = { workspace = true }
+jobtrack-api = { workspace = true }
+jobtrack-worker = { workspace = true }
+jobtrack-evals = { workspace = true }
+
+# --------------------------------------------------------------------------
+# ruff
+# --------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = [
+  "packages/core/src",
+  "services/api/src",
+  "services/worker/src",
+  "evals/src",
+]
+
+[tool.ruff.lint]
+select = [
+  "F",   # pyflakes
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "I",   # isort
+  "N",   # pep8-naming
+  "UP",  # pyupgrade
+  "B",   # bugbear
+  "A",   # builtins shadowing
+  "C4",  # comprehensions
+  "DTZ", # naive datetimes
+  "T20", # print
+  "SIM", # simplify
+  "PTH", # pathlib
+  "RUF",
+  "ASYNC",
+  "S",   # bandit
+  "ANN", # annotations
+  "TID", # tidy imports
+  "ERA", # commented-out code
+]
+ignore = [
+  "ANN401", # typing.Any is occasionally the honest annotation at a boundary
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests assert, use fixtures positionally, and hardcode sample values on purpose.
+"**/tests/**" = ["S101", "ANN201", "ANN001", "S105", "S106"]
+# Eval and ops scripts are CLIs; stdout is their interface.
+"evals/**" = ["T20"]
+"scripts/**" = ["T20"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+known-first-party = ["jobtrack_core", "jobtrack_api", "jobtrack_worker", "jobtrack_evals"]
+
+# --------------------------------------------------------------------------
+# mypy
+# --------------------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+warn_unused_ignores = true
+disallow_any_unimported = true
+enable_error_code = [
+  "redundant-expr",
+  "truthy-bool",
+  "ignore-without-code",
+  "possibly-undefined",
+]
+mypy_path = [
+  "packages/core/src",
+  "services/api/src",
+  "services/worker/src",
+  "evals/src",
+]
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+# The AlloyDB connector ships no py.typed marker as of 1.14.0 (checked 2026-09-11).
+module = ["google.cloud.alloydb.connector.*"]
+ignore_missing_imports = true
+
+# --------------------------------------------------------------------------
+# pytest
+# --------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+# Import the workspace packages by path rather than through uv's editable installs.
+# Editable installs rely on a .pth file in site-packages, and CPython skips any .pth
+# carrying macOS's UF_HIDDEN flag — which iCloud Drive sets on everything under a
+# synced ~/Documents, silently breaking every import. Naming the source roots here
+# makes the test run independent of that, and of whether a sync has happened.
+pythonpath = [
+  "packages/core/src",
+  "services/api/src",
+  "services/worker/src",
+  "evals/src",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = [
+  "packages/core/tests",
+  "services/api/tests",
+  "services/worker/tests",
+]
+addopts = [
+  # Each service has its own tests/ directory and they share obvious file names
+  # (test_health.py). The importlib import mode keeps those from colliding without
+  # scattering __init__.py files through the test tree.
+  "--import-mode=importlib",
+  "--strict-markers",
+  "--strict-config",
+  "-ra",
+]
+markers = [
+  "integration: needs the docker compose stack (postgres, emulators)",
+  "live: calls real Google Cloud APIs and costs money",
+]
+filterwarnings = [
+  # Warnings are failures. Anything ignored below is raised by a dependency, not by
+  # this repo, and each entry names the condition for deleting it.
+  "error",
+  # starlette 1.6.0 touches a deprecated anyio alias while importing its TestClient.
+  # Remove once starlette imports anyio.from_thread.BlockingPortal.
+  "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
+]

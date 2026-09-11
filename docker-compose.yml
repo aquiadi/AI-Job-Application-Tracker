@@ -1,0 +1,69 @@
+name: jobtrack
+
+# Local development uses no billable Google Cloud resources. Postgres with pgvector
+# stands in for AlloyDB, and the Pub/Sub and Firebase Auth emulators stand in for
+# their services. Cloud Tasks has no emulator, so it is replaced in-process by a
+# local TaskQueue implementation rather than by a container.
+
+services:
+  postgres:
+    # AlloyDB tracks PostgreSQL 16 for this project's feature set. pgvector's own
+    # image is the upstream one, so there is no third-party build in the loop.
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: jobtrack
+      POSTGRES_DB: postgres
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d jobtrack"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command:
+      - gcloud
+      - beta
+      - emulators
+      - pubsub
+      - start
+      - --project=${GOOGLE_CLOUD_PROJECT:-jobtrack-local}
+      - --host-port=0.0.0.0:8085
+    ports:
+      - "8085:8085"
+    healthcheck:
+      # The emulator answers 404 on / once it is listening, which is enough of a
+      # signal; it has no health endpoint of its own.
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null -w '%{http_code}' http://localhost:8085/ | grep -qE '200|404'"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  auth:
+    build:
+      context: ./docker/auth-emulator
+    command:
+      - firebase
+      - emulators:start
+      - --only=auth
+      - --project=${GOOGLE_CLOUD_PROJECT:-jobtrack-local}
+    ports:
+      - "9099:9099" # auth emulator
+      - "4000:4000" # emulator UI
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9099/ >/dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+
+volumes:
+  postgres-data:
