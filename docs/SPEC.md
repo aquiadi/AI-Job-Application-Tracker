@@ -12,7 +12,7 @@ Each item is deployed to Cloud Run before the next one starts.
 | # | Milestone | State |
 |---|---|---|
 | 0 | Scaffold, tooling, design system, sandbox check | Done |
-| 1 | Schema, RLS with cross-tenant test, Identity Platform auth | Not started |
+| 1 | Schema, RLS with cross-tenant test, Identity Platform auth | Done, not deployed |
 | 2 | JD ingestion: Greenhouse, Lever, pasted text; extraction eval | Not started |
 | 3 | Profile import (PDF) and the deterministic fit score | Not started |
 | 4 | Grounded tailoring, validator, PDF rendering, faithfulness eval | Not started |
