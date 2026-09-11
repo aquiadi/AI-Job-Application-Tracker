@@ -56,7 +56,9 @@ class DatabaseSettings(BaseSettings):
 
     # Local only.
     host: str = "127.0.0.1"
-    port: int = 5432
+    # 5433: the compose stack avoids the default so it can coexist with another
+    # Postgres on the same machine.
+    port: int = 5433
     password: SecretStr = SecretStr("jobtrack")
 
     # Cloud only. Format: projects/P/locations/R/clusters/C/instances/I

@@ -92,10 +92,15 @@ then the web app's typecheck, lint, format check and contrast check. It is green
 this commit with 40 Python tests and 44 checked contrast pairings. `npm run build`
 produces a standalone Next.js server.
 
-Not yet verified: the docker compose stack. The machine it was written on ran out of
-disk before the Auth emulator image finished building, so `make up` is unrun. The
-Postgres init SQL and the compose health checks are therefore unproven and M1 starts
-by running them.
+`make up` brings all three containers to healthy. Verified against the running
+stack: both databases exist and are owned by `jobtrack_owner`; `vector`, `uuid-ossp`
+and `pg_trgm` are installed; neither role is a superuser; and `jobtrack_app` is
+refused when it tries to create a table in `public`, which is the privilege split
+row-level security depends on. The Pub/Sub emulator accepts a topic create and lists
+it back, and the Auth emulator reports ready.
+
+Postgres binds host port 5433 rather than 5432, so the stack coexists with another
+Postgres on the same machine. `DB_PORT` moves both the bind and the client.
 
 ---
 
