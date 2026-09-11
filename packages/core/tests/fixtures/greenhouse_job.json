@@ -1,0 +1,16 @@
+{
+  "id": 6136160004,
+  "internal_job_id": 5196261004,
+  "title": "Senior Backend Engineer, Payments",
+  "company_name": "Northwind",
+  "absolute_url": "https://job-boards.greenhouse.io/northwind/jobs/6136160004",
+  "location": { "name": "Hybrid - London" },
+  "updated_at": "2026-08-18T18:06:19-04:00",
+  "first_published": "2026-08-06T12:50:10-04:00",
+  "requisition_id": "1311",
+  "language": "en",
+  "departments": [{ "id": 4085775004, "name": "Engineering", "child_ids": [], "parent_id": null }],
+  "offices": [{ "id": 4091069004, "name": "Office - London", "location": "London, England, United Kingdom" }],
+  "metadata": [{ "id": 18783104004, "name": "Career Site Categories", "value": "Engineering", "value_type": "single_select" }],
+  "content": "&lt;p&gt;We are building the settlement platform that moves money for thousands of merchants.&lt;/p&gt;\n&lt;h3&gt;What you&amp;#39;ll do&lt;/h3&gt;\n&lt;ul&gt;\n&lt;li&gt;Own the ledger service end to end&lt;/li&gt;\n&lt;li&gt;Partner with compliance on reconciliation&lt;/li&gt;\n&lt;/ul&gt;\n&lt;h3&gt;Requirements&lt;/h3&gt;\n&lt;ul&gt;\n&lt;li&gt;5+ years building backend services in Python or Go&lt;/li&gt;\n&lt;li&gt;Experience with distributed transactions and idempotent processing&lt;/li&gt;\n&lt;li&gt;Operating services on Kubernetes in production&lt;/li&gt;\n&lt;/ul&gt;\n&lt;h3&gt;Nice to have&lt;/h3&gt;\n&lt;ul&gt;\n&lt;li&gt;Event streaming with Kafka or Pub/Sub&lt;/li&gt;\n&lt;li&gt;Authored reusable Terraform modules&lt;/li&gt;\n&lt;/ul&gt;\n&lt;h3&gt;Benefits&lt;/h3&gt;\n&lt;ul&gt;\n&lt;li&gt;Private medical cover&lt;/li&gt;\n&lt;li&gt;28 days holiday&lt;/li&gt;\n&lt;/ul&gt;\n&lt;p&gt;The range for this role is $165,000 - $205,000 USD per year.&lt;/p&gt;"
+}

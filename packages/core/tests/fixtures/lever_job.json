@@ -1,0 +1,36 @@
+{
+  "id": "7fca4a70-174c-41a2-b44b-7ff1cb9422e7",
+  "text": "Staff Data Engineer",
+  "hostedUrl": "https://jobs.lever.co/mercator/7fca4a70-174c-41a2-b44b-7ff1cb9422e7",
+  "applyUrl": "https://jobs.lever.co/mercator/7fca4a70-174c-41a2-b44b-7ff1cb9422e7/apply",
+  "createdAt": 1786017600000,
+  "country": "US",
+  "workplaceType": "hybrid",
+  "categories": {
+    "commitment": "Full-time",
+    "department": "Data",
+    "location": "Seattle, WA",
+    "team": "Platform",
+    "allLocations": ["Seattle, WA"]
+  },
+  "description": "<div><p>Mercator moves supply chain data for freight forwarders.</p></div>",
+  "descriptionPlain": "Mercator moves supply chain data for freight forwarders.",
+  "lists": [
+    {
+      "text": "What you will do",
+      "content": "<li>Design the ingestion layer for carrier feeds</li><li>Own data quality SLAs</li>"
+    },
+    {
+      "text": "Required Qualifications",
+      "content": "<li>Minimum 6 years building data pipelines</li><li>Deep SQL and Python</li><li>Production experience with Airflow or dbt</li>"
+    },
+    {
+      "text": "Nice to have",
+      "content": "<li>Exposure to Snowflake or BigQuery</li>"
+    }
+  ],
+  "additional": "<div><p>Mercator is an equal opportunity employer.</p></div>",
+  "additionalPlain": "Mercator is an equal opportunity employer.",
+  "opening": "",
+  "openingPlain": ""
+}

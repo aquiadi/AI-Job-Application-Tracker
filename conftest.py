@@ -31,6 +31,7 @@ _OWNED_PREFIXES: tuple[str, ...] = (
     "GEMINI_",
     "GOOGLE_CLOUD_",
     "INTERNAL_INVOKER_",
+    "LLM_",
     "LOG_LEVEL",
     "PUBSUB_",
     "SERVICE_NAME",

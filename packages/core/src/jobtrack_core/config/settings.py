@@ -122,6 +122,13 @@ class Settings(BaseSettings):
 
     pubsub_emulator_host: str = Field(default="", alias="PUBSUB_EMULATOR_HOST")
 
+    # Which model backend to use. `heuristic` and `cassette` call nothing, which is
+    # what lets this run with no credentials; `cloud` rejects both. ADR 10.
+    llm_backend: Literal["vertex", "heuristic", "cassette"] = Field(
+        default="heuristic", alias="LLM_BACKEND"
+    )
+    llm_cassette_dir: str = Field(default="tests/cassettes", alias="LLM_CASSETTE_DIR")
+
     gcs_uploads_bucket: str = Field(default="", alias="GCS_UPLOADS_BUCKET")
     gcs_raw_bucket: str = Field(default="", alias="GCS_RAW_BUCKET")
     gcs_artifacts_bucket: str = Field(default="", alias="GCS_ARTIFACTS_BUCKET")

@@ -17,6 +17,9 @@ dependencies = [
   "google-cloud-tasks>=2.21",
   "google-auth>=2.43",
   "structlog>=25.5",
+  # Declared rather than inherited from google-genai: the ATS adapters are a
+  # first-class use of it, and a transitive dependency can be dropped by an upgrade.
+  "httpx>=0.28",
 ]
 
 [build-system]
