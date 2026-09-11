@@ -34,6 +34,13 @@ export type Coverage = Schemas["Coverage"];
 export type JobStatus = Schemas["JobStatus"];
 export type ProfileItemKind = Schemas["ProfileItemKind"];
 export type RequirementKind = Schemas["RequirementKind"];
+export type SkillsOut = Schemas["SkillsOut"];
+export type SkillEvidence = Schemas["SkillEvidence"];
+export type ArtifactSummary = Schemas["ArtifactSummary"];
+export type TailorOut = Schemas["TailorOut"];
+export type NudgeOut = Schemas["NudgeOut"];
+export type NudgeUpdate = Schemas["NudgeUpdate"];
+export type SweepOut = Schemas["SweepOut"];
 
 /** A non-2xx response, carrying the API's own `code` and `detail`. */
 export class ApiError extends Error {
@@ -118,6 +125,30 @@ export const api = {
       body: JSON.stringify({ to_stage: toStage, note: note ?? null }),
     }),
   stopTracking: (id: string) => request<void>(`/applications/${id}`, { method: "DELETE" }),
+
+  tailor: (applicationId: string) =>
+    request<TailorOut>(`/applications/${applicationId}/tailor`, { method: "POST" }),
+  artifacts: (applicationId: string) =>
+    request<ArtifactSummary[]>(`/applications/${applicationId}/artifacts`),
+  /**
+   * The PDF, as a blob URL the page can hand to a link.
+   *
+   * Fetched rather than linked directly because the download needs the bearer token,
+   * and an <a href> carries no headers. The URL is revoked by the caller after use.
+   */
+  artifactPdf: async (artifactId: string): Promise<string> => {
+    const token = await idToken();
+    const headers = new Headers();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const response = await fetch(`${config.apiUrl}/artifacts/${artifactId}/pdf`, { headers });
+    if (!response.ok) throw new ApiError(response.status, "error", "Could not download that PDF.");
+    return URL.createObjectURL(await response.blob());
+  },
+
+  nudges: () => request<NudgeOut[]>("/nudges"),
+  updateNudge: (id: string, body: NudgeUpdate) =>
+    request<NudgeOut>(`/nudges/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  sweep: () => request<SweepOut>("/nudges/sweep", { method: "POST" }),
 };
 
 export type ApiPaths = paths;

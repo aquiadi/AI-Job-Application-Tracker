@@ -32,16 +32,31 @@ def tailor(
     items: list[tuple[uuid.UUID, str, str | None, str | None]],
     relevant_item_ids: list[uuid.UUID],
 ) -> TailoredResume:
-    """Select and group evidence. Returns each item unchanged, citing itself.
+    """Order evidence by relevance to this posting. Returns each item unchanged.
+
+    Ordering is the tailoring here, not selection. An earlier version kept only the
+    items the fit breakdown had matched to a requirement, and on a posting where the
+    embedding matched one requirement that produced a one-bullet resume — technically
+    relevant and useless to send. A resume has to be complete enough to be a resume.
+
+    So matched items lead, in the order the breakdown found them useful, and the rest
+    follow in the user's own display order. What the tailoring does is decide what a
+    reader sees first.
 
     Args:
         items: (id, text, organisation, role) for every reviewed profile item.
-        relevant_item_ids: item ids the fit breakdown matched to a requirement, most
-            relevant first. Items outside this list are dropped rather than appended —
-            a tailored resume that ends with everything else is not tailored.
+        relevant_item_ids: item ids the breakdown matched to a requirement, most
+            relevant first.
     """
     by_id = {item_id: (text, organisation, role) for item_id, text, organisation, role in items}
-    ordered = [item_id for item_id in relevant_item_ids if item_id in by_id][:MAX_SELECTED]
+
+    ordered: list[uuid.UUID] = []
+    seen: set[uuid.UUID] = set()
+    for item_id in [*relevant_item_ids, *by_id]:
+        if item_id in by_id and item_id not in seen:
+            seen.add(item_id)
+            ordered.append(item_id)
+    ordered = ordered[:MAX_SELECTED]
 
     grouped: OrderedDict[tuple[str, str | None, str | None], list[TailoredBullet]] = OrderedDict()
     for item_id in ordered:

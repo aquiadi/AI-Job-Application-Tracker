@@ -32,6 +32,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobtrack_core.db.enums import RequirementKind
+from jobtrack_core.llm.heuristic.segment import SKILL_VOCABULARY
 
 #: RRF's only parameter, from Cormack et al. Unchanged rather than tuned, because
 #: tuning it without an eval is guessing. ADR 12.
@@ -126,17 +127,27 @@ _MATCH_SQL = text(
             LIMIT :candidates
         ) d
     ),
+    -- `plainto_tsquery` joins every lexeme with AND, so a requirement of five words
+    -- only matched an item containing all five. In practice that is never, which left
+    -- this arm contributing nothing and made the "hybrid" retrieval dense-only.
+    -- Rewriting the operators to OR turns it into what a retrieval query should be:
+    -- match any term, rank by how many and how close.
+    queries AS (
+        SELECT id,
+               NULLIF(replace(plainto_tsquery('english', text)::text, '&', '|'), '')::tsquery
+                   AS query
+        FROM req
+    ),
     lexical AS (
         SELECT r.id AS requirement_id,
                l.item_id,
                row_number() OVER (PARTITION BY r.id ORDER BY l.score DESC) AS rank
         FROM req r
+        JOIN queries q ON q.id = r.id
         CROSS JOIN LATERAL (
-            SELECT p.id AS item_id,
-                   ts_rank_cd(p.search, plainto_tsquery('english', r.text)) AS score
+            SELECT p.id AS item_id, ts_rank_cd(p.search, q.query) AS score
             FROM profile_items p
-            WHERE p.reviewed
-              AND p.search @@ plainto_tsquery('english', r.text)
+            WHERE p.reviewed AND q.query IS NOT NULL AND p.search @@ q.query
             ORDER BY score DESC
             LIMIT :candidates
         ) l
@@ -193,7 +204,8 @@ async def score_job(session: AsyncSession, *, job_id: uuid.UUID) -> FitScore:
 
     for row in rows:
         similarity = float(row["similarity"])
-        coverage = classify(similarity)
+        shared = shared_technologies(row["requirement"], row["evidence"])
+        coverage = classify(similarity, shared_technologies=shared)
         embedding_model = embedding_model or row["embedding_model"]
         # Evidence below the partial threshold is withheld rather than shown. The
         # nearest item to "5 years of Kubernetes" is always *something*, and showing an
@@ -214,11 +226,39 @@ async def score_job(session: AsyncSession, *, job_id: uuid.UUID) -> FitScore:
     return _summarise(matches, embedding_model)
 
 
-def classify(similarity: float) -> Coverage:
-    """Turn a similarity into a judgement."""
+def shared_technologies(requirement: str, evidence: str | None) -> frozenset[str]:
+    """Named technologies that appear in both the requirement and its evidence.
+
+    The same vocabulary the skills gap uses, deliberately. Without this the two reads
+    of one page could disagree — the skills panel saying PostgreSQL is covered because
+    the token is there, the requirements panel saying it is missing because an
+    embedding scored the sentence low — and a page that contradicts itself is worse
+    than either answer alone.
+    """
+    if not evidence:
+        return frozenset()
+    return frozenset(
+        skill
+        for skill, pattern in SKILL_VOCABULARY
+        if pattern.search(requirement) and pattern.search(evidence)
+    )
+
+
+def classify(similarity: float, *, shared_technologies: frozenset[str] = frozenset()) -> Coverage:
+    """Turn a similarity into a judgement, with a floor for exact technical overlap.
+
+    A requirement naming Kubernetes, answered by an item naming Kubernetes, is at least
+    partially covered whatever the embedding says. That is the argument ADR 12 makes
+    for having a lexical arm at all, applied to the judgement rather than only to the
+    ranking — and it is what keeps a weak embedding space from reporting a genuine
+    match as a gap.
+
+    It is a floor, never a ceiling: shared tokens cannot turn a low similarity into
+    COVERED, because sharing a word is not the same as meeting the requirement.
+    """
     if similarity >= COVERED_AT:
         return Coverage.COVERED
-    if similarity >= PARTIAL_AT:
+    if similarity >= PARTIAL_AT or shared_technologies:
         return Coverage.PARTIAL
     return Coverage.MISSING
 

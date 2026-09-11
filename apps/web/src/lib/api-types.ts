@@ -308,6 +308,142 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/applications/{application_id}/tailor": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Generate a tailored resume
+     * @description Write a resume for this application from reviewed profile items only.
+     *
+     *     Every bullet is checked against the items it cites before the artifact is stored.
+     *     Anything that fails is dropped and the reason is recorded, so the response can be
+     *     honest about what is not in the document.
+     */
+    post: operations["documents_tailor"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/applications/{application_id}/artifacts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Documents generated for an application
+     * @description Every version, newest first. Versions are kept so an earlier draft is recoverable.
+     */
+    get: operations["documents_list_artifacts"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/artifacts/{artifact_id}/pdf": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Download a document
+     * @description Render the stored structure to PDF.
+     *
+     *     Rendered on demand rather than at generation time, so contact details can be
+     *     corrected without paying for the document again. This is the only place in the
+     *     system where those details are attached to generated text.
+     */
+    get: operations["documents_download"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/nudges": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Drafted follow-ups
+     * @description Follow-ups drafted for applications that have gone quiet. None has been sent.
+     */
+    get: operations["documents_list_nudges"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/nudges/{nudge_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Edit or dismiss a draft
+     * @description Edit the text, mark it sent, or dismiss it.
+     *
+     *     Marking it sent records an outcome; it does not send anything. The user sends from
+     *     their own mail client, which is what makes "nothing is sent on your behalf" a
+     *     property of the system rather than a promise in a document.
+     */
+    patch: operations["documents_update_nudge"];
+    trace?: never;
+  };
+  "/nudges/sweep": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Look for applications that have gone quiet
+     * @description Draft a follow-up for every application past its stage threshold.
+     *
+     *     Safe to call repeatedly: the unique constraint on
+     *     `(application_id, stage, stage_entered_at)` means one wait produces one draft, no
+     *     matter how many times this runs. In cloud, Cloud Scheduler calls it daily.
+     */
+    post: operations["documents_sweep"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/healthz": {
     parameters: {
       query?: never;
@@ -416,6 +552,36 @@ export interface components {
       is_active: boolean;
       /** Allowed Next */
       allowed_next: components["schemas"]["Stage"][];
+    };
+    /**
+     * ArtifactKind
+     * @enum {string}
+     */
+    ArtifactKind: "resume" | "cover_letter";
+    /** ArtifactSummary */
+    ArtifactSummary: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Application Id
+       * Format: uuid
+       */
+      application_id: string;
+      kind: components["schemas"]["ArtifactKind"];
+      /** Version */
+      version: number;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Bullet Count */
+      bullet_count: number;
+      /** Warnings */
+      warnings: string[];
     };
     /**
      * Board
@@ -685,6 +851,56 @@ export interface components {
       /** Occurred At */
       occurred_at?: string | null;
     };
+    /** NudgeOut */
+    NudgeOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Application Id
+       * Format: uuid
+       */
+      application_id: string;
+      stage: components["schemas"]["Stage"];
+      state: components["schemas"]["NudgeState"];
+      /** Draft Subject */
+      draft_subject: string | null;
+      /** Draft Body */
+      draft_body: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Title */
+      title: string | null;
+      /** Company */
+      company: string | null;
+    };
+    /**
+     * NudgeOutcome
+     * @description Recorded after the fact, so nudge usefulness becomes measurable.
+     * @enum {string}
+     */
+    NudgeOutcome: "sent" | "replied" | "no_reply";
+    /**
+     * NudgeState
+     * @enum {string}
+     */
+    NudgeState: "pending" | "approved" | "edited" | "dismissed" | "snoozed";
+    /** NudgeUpdate */
+    NudgeUpdate: {
+      state?: components["schemas"]["NudgeState"] | null;
+      /** Draft Subject */
+      draft_subject?: string | null;
+      /** Draft Body */
+      draft_body?: string | null;
+      outcome?: components["schemas"]["NudgeOutcome"] | null;
+      /** Snoozed Until */
+      snoozed_until?: string | null;
+    };
     /**
      * ProfileItemKind
      * @enum {string}
@@ -805,10 +1021,42 @@ export interface components {
       nice_covered: number;
       /** Matches */
       matches: components["schemas"]["MatchOut"][];
+      skills: components["schemas"]["SkillsOut"];
       /** Scorable */
       scorable: boolean;
       /** Embedding Model */
       embedding_model: string | null;
+    };
+    /**
+     * SkillEvidence
+     * @description A named technology the posting asks for, and the item that proves it.
+     */
+    SkillEvidence: {
+      /** Skill */
+      skill: string;
+      /** Evidence */
+      evidence: string;
+      /**
+       * Evidence Item Id
+       * Format: uuid
+       */
+      evidence_item_id: string;
+    };
+    /**
+     * SkillsOut
+     * @description Named technologies, split by whether the profile can show them.
+     *
+     *     Separate from the requirement matches because the two behave differently. A
+     *     requirement is prose and is compared by meaning; a skill is a token, and a near
+     *     miss is a miss — someone who has used Docker has not used Kubernetes.
+     */
+    SkillsOut: {
+      /** Have */
+      have: components["schemas"]["SkillEvidence"][];
+      /** Lack */
+      lack: string[];
+      /** Unused */
+      unused: string[];
     };
     /**
      * SourceAts
@@ -856,6 +1104,21 @@ export interface components {
       job_id: string;
       /** Note */
       note?: string | null;
+    };
+    /** SweepOut */
+    SweepOut: {
+      /** Considered */
+      considered: number;
+      /** Drafted */
+      drafted: number;
+      /** Already Had One */
+      already_had_one: number;
+    };
+    /** TailorOut */
+    TailorOut: {
+      artifact: components["schemas"]["ArtifactSummary"];
+      /** Model */
+      model: string;
     };
     /** ValidationError */
     ValidationError: {
@@ -1751,6 +2014,306 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  documents_tailor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        application_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TailorOut"];
+        };
+      };
+      /**
+       * @description The input was well-formed but could not be used.
+       *
+       *         A link to a board with no adapter, a posting that has been taken down, a paste
+       *         too short to be a description. The detail is written to be shown to the person
+       *         who typed it, because in every one of those cases they are the one who can fix it.
+       */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
+        };
+      };
+      /** @description No usable credentials were presented. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
+        };
+      };
+      /**
+       * @description The resource does not exist, or belongs to someone else.
+       *
+       *         Those two cases return the same response on purpose. A 403 for a row owned by
+       *         another user would confirm that the row exists, which is a membership oracle over
+       *         other people's data.
+       */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  documents_list_artifacts: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        application_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ArtifactSummary"][];
+        };
+      };
+      /** @description No usable credentials were presented. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  documents_download: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        artifact_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No usable credentials were presented. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
+        };
+      };
+      /**
+       * @description The resource does not exist, or belongs to someone else.
+       *
+       *         Those two cases return the same response on purpose. A 403 for a row owned by
+       *         another user would confirm that the row exists, which is a membership oracle over
+       *         other people's data.
+       */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  documents_list_nudges: {
+    parameters: {
+      query?: {
+        include_dismissed?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NudgeOut"][];
+        };
+      };
+      /** @description No usable credentials were presented. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  documents_update_nudge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        nudge_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["NudgeUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NudgeOut"];
+        };
+      };
+      /** @description No usable credentials were presented. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
+        };
+      };
+      /**
+       * @description The resource does not exist, or belongs to someone else.
+       *
+       *         Those two cases return the same response on purpose. A 403 for a row owned by
+       *         another user would confirm that the row exists, which is a membership oracle over
+       *         other people's data.
+       */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  documents_sweep: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SweepOut"];
+        };
+      };
+      /** @description No usable credentials were presented. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
+        };
+      };
+      /** @description The request contradicts the current state, such as an illegal stage change. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorBody"];
         };
       };
     };

@@ -19,6 +19,7 @@ from jobtrack_core.pipeline.nudges import (
     business_days_between,
     is_stale,
 )
+from jobtrack_core.scoring.fit import Coverage, classify, shared_technologies
 from jobtrack_core.scoring.skills import _find, _pattern
 
 FRIDAY = datetime(2026, 9, 4, 12, 0, tzinfo=UTC)
@@ -128,3 +129,37 @@ class TestSkillMatching:
         items = [(uuid.uuid4(), "Six years of Python", ProfileItemKind.SKILL)]
 
         assert _find("Kubernetes", items) is None
+
+
+class TestCoverageFloor:
+    def test_a_shared_technology_lifts_a_gap_to_partial(self) -> None:
+        # The bug this pins: the skills panel reported PostgreSQL as covered because
+        # the token was present, while the requirements panel called it missing
+        # because the embedding scored the sentence low. A page that contradicts
+        # itself is worse than either answer alone.
+        shared = shared_technologies(
+            "Deep knowledge of PostgreSQL query tuning",
+            "Tuned PostgreSQL queries and indexes for a large ledger",
+        )
+
+        assert shared == {"postgresql"}
+        assert classify(0.2, shared_technologies=shared) is Coverage.PARTIAL
+
+    def test_a_shared_technology_cannot_reach_covered(self) -> None:
+        # A floor, never a ceiling. Sharing a word is not meeting the requirement.
+        assert classify(0.2, shared_technologies=frozenset({"python"})) is not Coverage.COVERED
+
+    def test_an_unrelated_pair_shares_nothing(self) -> None:
+        assert (
+            shared_technologies("Experience operating Kubernetes clusters", "Six years of Python")
+            == frozenset()
+        )
+
+    def test_missing_evidence_shares_nothing(self) -> None:
+        assert shared_technologies("Kubernetes in production", None) == frozenset()
+
+    def test_a_high_similarity_is_still_covered(self) -> None:
+        assert classify(0.9) is Coverage.COVERED
+
+    def test_a_low_similarity_with_no_overlap_is_still_missing(self) -> None:
+        assert classify(0.1) is Coverage.MISSING

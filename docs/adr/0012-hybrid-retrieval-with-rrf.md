@@ -91,3 +91,29 @@ that turn a similarity into covered/partial/missing are not believable until it 
 against real embeddings. Until then they are configuration with a default, and the
 interface shows the matched evidence beside every judgement so the user can see what
 the number was built from.
+
+---
+
+## Amendment, 2026-09-11: two corrections found by looking at the page
+
+**The lexical arm was contributing nothing.** The query was built with
+`plainto_tsquery`, which joins every lexeme with `AND`. A five-word requirement
+therefore only matched a profile item containing all five words, which in practice is
+never — `@@` was false, the arm returned no rows, and the "hybrid" retrieval had been
+dense-only since it was written. The operators are now rewritten to `OR`, which is what
+a retrieval query should be: match any term, rank by how many and how close. Found by
+running the two queries side by side against a real requirement, not by a failing test;
+the tests asserted the fused result, and a fusion of one arm and an empty arm looks
+exactly like a working fusion.
+
+**Coverage now has a floor for exact technical overlap.** Where a requirement and its
+chosen evidence share a named technology from the same vocabulary the skills gap uses,
+coverage is at least `partial`, whatever the embedding scored. The symptom was a page
+contradicting itself: the skills panel reporting PostgreSQL as covered because the token
+was present, and the requirements panel calling the same thing missing because the
+lexical embedding scored the sentence low.
+
+It is a floor and never a ceiling — shared tokens cannot produce `covered`, because
+sharing a word is not meeting the requirement. It is also the argument this ADR already
+makes for having a lexical arm, applied to the judgement rather than only to the
+ranking.

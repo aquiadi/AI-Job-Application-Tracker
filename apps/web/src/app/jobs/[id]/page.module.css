@@ -193,3 +193,99 @@
   max-width: var(--measure);
   line-height: var(--leading-body);
 }
+
+.skillColumns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  gap: var(--space-7);
+}
+
+.skillHeading {
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-muted);
+  margin: 0 0 var(--space-4);
+}
+
+.skillList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Present and absent are separated by structure — two columns, different marks —
+   rather than by colour alone, so the distinction survives a greyscale print and a
+   colour-blind reader. */
+.skillHave {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-left: var(--border-emphasis) solid var(--accent);
+  padding-left: var(--space-5);
+}
+
+.skillName {
+  font-weight: var(--weight-medium);
+}
+
+.skillEvidence {
+  font-family: var(--font-display);
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+  line-height: var(--leading-serif);
+}
+
+.skillLack {
+  border-left: var(--border-emphasis) solid var(--rule-strong);
+  padding-left: var(--space-5);
+  color: var(--ink-muted);
+}
+
+.skillNote,
+.unused {
+  font-size: var(--text-small);
+  color: var(--ink-faint);
+  line-height: var(--leading-body);
+  max-width: var(--measure);
+  margin: var(--space-5) 0 0;
+}
+
+.documents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.document {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  padding: var(--space-4) 0;
+  border-bottom: var(--border-hairline) solid var(--rule);
+}
+
+.document:last-child {
+  border-bottom: 0;
+}
+
+.documentTitle {
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+
+/* Dropped bullets are shown, not swallowed. A resume that is quietly shorter than the
+   user expects is worse than one with a stated gap. */
+.warnings {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-6);
+  font-size: var(--text-small);
+  color: var(--alert);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
