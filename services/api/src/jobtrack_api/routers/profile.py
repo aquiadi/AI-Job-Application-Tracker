@@ -14,7 +14,7 @@ from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, File, UploadFile, status
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import select
 
 from jobtrack_api.deps.auth import CurrentIdentity, TenantSession
@@ -30,6 +30,7 @@ from jobtrack_core.db.models import Profile, ProfileItem
 from jobtrack_core.llm.client import LlmError
 from jobtrack_core.pipeline import profile as pipeline
 from jobtrack_core.profile.pdf import ResumeReadError
+from jobtrack_core.profile.schemas import MIN_PROSE_CHARS, MIN_SKILL_CHARS
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -52,16 +53,30 @@ class ProfileUpdate(Contact):
 
 
 class ItemIn(BaseModel):
-    text: str = Field(min_length=3, max_length=600)
+    """A new profile item.
+
+    The minimum length is one character, not three, because a skill can be "R", "Go"
+    or "C#" — precisely the tokens a posting screens on. A blanket three-character
+    floor silently refused the most specific things a person can claim. Prose is held
+    to a longer minimum by the validator below, where the two cases can differ.
+    """
+
+    text: str = Field(min_length=MIN_SKILL_CHARS, max_length=600)
     kind: ProfileItemKind = ProfileItemKind.EXPERIENCE_BULLET
     organisation: str | None = Field(default=None, max_length=255)
     role: str | None = Field(default=None, max_length=255)
     started_on: date | None = None
     ended_on: date | None = None
 
+    @model_validator(mode="after")
+    def _prose_is_long_enough(self) -> ItemIn:
+        if self.kind is not ProfileItemKind.SKILL and len(self.text.strip()) < MIN_PROSE_CHARS:
+            raise ValueError(f"a {self.kind.value} needs at least {MIN_PROSE_CHARS} characters")
+        return self
+
 
 class ItemPatch(BaseModel):
-    text: str | None = Field(default=None, min_length=3, max_length=600)
+    text: str | None = Field(default=None, min_length=MIN_SKILL_CHARS, max_length=600)
     kind: ProfileItemKind | None = None
     organisation: str | None = Field(default=None, max_length=255)
     role: str | None = Field(default=None, max_length=255)

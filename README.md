@@ -239,7 +239,7 @@ going to invent them in the meantime.
 | Measurement | Value | Command |
 |---|---|---|
 | Unit tests passing | 296 | `make test` |
-| Integration tests passing (real Postgres) | 77 | `make test-integration` |
+| Integration tests passing (real Postgres) | 79 | `make test-integration` |
 | Tables, all with a row-level security policy | 12 | `\dp` in psql |
 | HTTP endpoints | 25 | `curl localhost:8080/openapi.json` |
 | Token contrast pairings at or above WCAG AA | 44 of 44 | `cd apps/web && npm run check:contrast` |
@@ -347,6 +347,21 @@ before writing a line of code, so the answer arrived on day zero instead of wait
 me.
 
 ---
+
+## Try it
+
+```bash
+make up        # Postgres with pgvector, the Pub/Sub emulator, the auth emulator
+make migrate
+make dev       # api on 8080, worker on 8081, web on 3000
+make demo      # seeds an account with a profile, three postings and two follow-ups
+```
+
+Then open `http://127.0.0.1:3000` and sign in as `demo@example.test` / `demo-password`.
+
+No Google Cloud account, no credentials, no billing. `make demo` drives the public API
+with a real signed-in token and nothing else, so if it finishes, every endpoint it
+touched works for a browser too.
 
 ## Running it locally
 

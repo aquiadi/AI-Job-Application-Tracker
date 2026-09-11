@@ -142,6 +142,27 @@ class TestProfile:
         assert edited.json()["text"] == "Wrote Go services"
         assert edited.json()["embedded"] is True
 
+    def test_a_two_letter_skill_can_be_added(self, client: TestClient) -> None:
+        # "Go", "R" and "C#" are exactly the tokens a posting screens on. A blanket
+        # three-character minimum refused them, which meant a user could not enter
+        # the most specific things they know.
+        response = client.post(
+            "/profile/items", json={"text": "Go", "kind": "skill"}, headers=auth("idp|p2b")
+        )
+
+        assert response.status_code == 201, response.text
+        assert response.json()["text"] == "Go"
+
+    def test_a_two_letter_experience_bullet_is_still_refused(self, client: TestClient) -> None:
+        # Only skills may be short; a two-character bullet is a parsing artefact.
+        response = client.post(
+            "/profile/items",
+            json={"text": "ok", "kind": "experience_bullet"},
+            headers=auth("idp|p2c"),
+        )
+
+        assert response.status_code == 422
+
     def test_contact_details_round_trip(self, client: TestClient) -> None:
         response = client.patch(
             "/profile",

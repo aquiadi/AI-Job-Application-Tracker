@@ -123,6 +123,10 @@ migration: ## Create a migration: make migration m="add nudges table"
 # Google Cloud
 # --------------------------------------------------------------------------
 
+.PHONY: demo
+demo: ## Seed a demo account you can sign in to and click through
+	$(PY) python scripts/seed_demo.py
+
 .PHONY: eval
 eval: ## Score extraction against the labelled dataset
 	$(PY) python -m jobtrack_evals.run
