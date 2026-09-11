@@ -306,10 +306,13 @@ async def _call_model(
     posting: CanonicalPosting,
     client: LlmClient,
 ) -> LlmResult[ExtractedPosting]:
+    # Empty rather than a sentinel such as "not stated". A backend that reads these
+    # values back — the heuristic one does — would otherwise store the sentinel as the
+    # posting's title, and it renders on screen as though the employer wrote it.
     prompt = load_prompt("extract_jd").render(
         posting=posting.body,
-        title=posting.title or "not stated",
-        company=posting.company or "not stated",
+        title=posting.title or "",
+        company=posting.company or "",
     )
     result = await client.generate_structured(prompt, ExtractedPosting)
     await record_call(

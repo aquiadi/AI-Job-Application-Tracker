@@ -133,6 +133,14 @@ class Settings(BaseSettings):
     )
     llm_cassette_dir: str = Field(default="tests/cassettes", alias="LLM_CASSETTE_DIR")
 
+    # Browser origins allowed to call this API. Comma-separated, and an explicit
+    # list rather than "*": requests carry an Authorization header, and a wildcard
+    # origin would let any site a signed-in user visits read their data with their
+    # own token.
+    web_origins: str = Field(
+        default="http://localhost:3000,http://127.0.0.1:3000", alias="WEB_ORIGINS"
+    )
+
     gcs_uploads_bucket: str = Field(default="", alias="GCS_UPLOADS_BUCKET")
     gcs_raw_bucket: str = Field(default="", alias="GCS_RAW_BUCKET")
     gcs_artifacts_bucket: str = Field(default="", alias="GCS_ARTIFACTS_BUCKET")
@@ -155,6 +163,7 @@ class Settings(BaseSettings):
                 ("GCS_UPLOADS_BUCKET", self.gcs_uploads_bucket),
                 ("GCS_RAW_BUCKET", self.gcs_raw_bucket),
                 ("GCS_ARTIFACTS_BUCKET", self.gcs_artifacts_bucket),
+                ("WEB_ORIGINS", self.web_origins),
             )
             if not value
         ]
@@ -179,6 +188,11 @@ class Settings(BaseSettings):
     @property
     def is_local(self) -> bool:
         return self.environment is Environment.LOCAL
+
+    @property
+    def allowed_origins(self) -> tuple[str, ...]:
+        """Origins the browser client may call from."""
+        return tuple(part.strip() for part in self.web_origins.split(",") if part.strip())
 
     @property
     def internal_invokers(self) -> frozenset[str]:

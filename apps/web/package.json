@@ -7,13 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --max-warnings 0",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
     "check": "npm run typecheck && npm run lint && npm run fmt:check && npm run check:contrast",
-    "check:contrast": "node scripts/check-contrast.mjs"
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "typegen": "next typegen"
   },
   "dependencies": {
+    "firebase": "^12.19.0",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
@@ -24,8 +26,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
-    "typescript": "^5",
+    "eslint-config-prettier": "^10.1.5",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.6.2",
-    "eslint-config-prettier": "^10.1.5"
+    "typescript": "^5"
   }
 }

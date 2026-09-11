@@ -1,135 +1,142 @@
+"use client";
+
+import { useCallback, useState } from "react";
+import Link from "next/link";
+
+import { api, ApiError, type ApplicationOut, type Board, type Stage } from "@/lib/api";
+import { useResource } from "@/lib/resource";
+import { useRequireSession } from "@/lib/session";
+import { Empty, ErrorNote, Loading, ui } from "@/components/ui";
 import styles from "./page.module.css";
 
-type Coverage = "covered" | "partial" | "missing";
-
-interface ExampleRequirement {
-  readonly requirement: string;
-  readonly kind: "must" | "nice";
-  readonly coverage: Coverage;
-  readonly evidence: string | null;
-}
-
-/**
- * A worked example, not live data. It exists so the first thing on the page is the
- * thing the product is actually for: a posting broken into requirements, each one
- * answered by a line from your own history or openly marked as unanswered.
- */
-const EXAMPLE: readonly ExampleRequirement[] = [
-  {
-    requirement: "5+ years building backend services in Python or Go",
-    kind: "must",
-    coverage: "covered",
-    evidence: "Six years on payment settlement services in Python at Northwind",
-  },
-  {
-    requirement: "Distributed transactions and idempotent processing",
-    kind: "must",
-    coverage: "covered",
-    evidence: "Designed the idempotent ledger write path behind 40M daily postings",
-  },
-  {
-    requirement: "Operating services on Kubernetes in production",
-    kind: "must",
-    coverage: "partial",
-    evidence: "Deployed to GKE and carried the on-call pager; no cluster ownership",
-  },
-  {
-    requirement: "Event streaming with Kafka or Pub/Sub",
-    kind: "nice",
-    coverage: "partial",
-    evidence: "Consumed Pub/Sub topics for reconciliation jobs",
-  },
-  {
-    requirement: "Authored reusable Terraform modules",
-    kind: "nice",
-    coverage: "missing",
-    evidence: null,
-  },
-];
-
-const COVERAGE_LABEL: Record<Coverage, string> = {
-  covered: "Covered",
-  partial: "Partial",
-  missing: "Missing",
+const STAGE_LABELS: Record<string, string> = {
+  saved: "Saved",
+  applied: "Applied",
+  screen: "Screen",
+  technical: "Technical",
+  onsite: "Onsite",
+  offer: "Offer",
+  rejected: "Rejected",
+  withdrawn: "Withdrawn",
+  ghosted: "Ghosted",
 };
 
-export default function Home() {
+export default function PipelinePage() {
+  const { ready } = useRequireSession();
+  const [moving, setMoving] = useState<string | null>(null);
+  const load = useCallback(() => api.board(), []);
+  const {
+    data: board,
+    error,
+    reload,
+    setError,
+  } = useResource<Board>(load, { enabled: ready, fallback: "Could not load the pipeline." });
+
+  async function move(application: ApplicationOut, to: Stage) {
+    setMoving(application.id);
+    try {
+      await api.moveStage(application.id, to);
+      await reload();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : "That move was refused.");
+    } finally {
+      setMoving(null);
+    }
+  }
+
+  if (!ready) return <Loading what="your pipeline" />;
+  if (!board) return error ? <ErrorNote>{error}</ErrorNote> : <Loading what="your pipeline" />;
+
+  const tracked = board.columns.reduce(
+    (total, column) => total + column.applications.length,
+    board.closed.length,
+  );
+
   return (
     <div className={styles.page}>
-      <section className={styles.intro}>
-        <h1 className={styles.title}>Every requirement, answered by something you have done</h1>
-        <p className={styles.lead}>
-          Paste a posting. It is split into requirements, each requirement is matched against
-          evidence in your profile, and the fit score is computed from those matches rather than
-          guessed by a model. A tailored draft can only reuse lines that already exist in your
-          history, so it cannot invent a skill you do not have.
+      <header className={styles.head}>
+        <h1 className={styles.title}>Pipeline</h1>
+        <p className={styles.note}>
+          {tracked === 0
+            ? "Nothing tracked yet."
+            : `${tracked} application${tracked === 1 ? "" : "s"}. Stage changes are recorded, so time in stage is measured rather than remembered.`}
         </p>
-      </section>
+      </header>
 
-      <section className={styles.example} aria-labelledby="example-heading">
-        <div className={styles.exampleHead}>
-          <h2 id="example-heading" className={styles.exampleTitle}>
-            Senior Backend Engineer, Payments
-          </h2>
-          <p className={styles.exampleNote}>
-            A worked example. Your own breakdown is built from your profile.
-          </p>
-        </div>
+      <ErrorNote>{error}</ErrorNote>
 
-        <ul className={styles.requirements} role="list">
-          {EXAMPLE.map((item) => (
-            <li key={item.requirement} className={styles.requirement}>
-              <span className={styles.chip} data-coverage={item.coverage}>
-                {COVERAGE_LABEL[item.coverage]}
-              </span>
-              <div className={styles.requirementBody}>
-                <p className={styles.requirementText}>
-                  {item.requirement}
-                  {item.kind === "nice" ? <span className={styles.kind}> nice to have</span> : null}
-                </p>
-                {item.evidence === null ? (
-                  <p className={styles.noEvidence}>Nothing in your profile covers this.</p>
-                ) : (
-                  <p className={styles.evidence}>{item.evidence}</p>
-                )}
-              </div>
-            </li>
+      {tracked === 0 ? (
+        <Empty>
+          Save a posting under <Link href="/jobs">Postings</Link>, then start tracking it to see it
+          here.
+        </Empty>
+      ) : (
+        <div className={styles.board}>
+          {board.columns.map((column) => (
+            <section className={styles.column} key={column.stage}>
+              <h2 className={styles.columnTitle}>
+                {STAGE_LABELS[column.stage] ?? column.stage}
+                <span className={styles.count}>{column.applications.length}</span>
+              </h2>
+              <ul className={styles.cards}>
+                {column.applications.map((application) => (
+                  <li className={styles.card} key={application.id}>
+                    <Link className={styles.cardTitle} href={`/jobs/${application.job_id}`}>
+                      {application.title ?? "Untitled posting"}
+                    </Link>
+                    {application.company ? (
+                      <p className={styles.company}>{application.company}</p>
+                    ) : null}
+                    <p className={styles.age}>
+                      {application.days_in_stage === 0
+                        ? "Today"
+                        : `${application.days_in_stage}d in stage`}
+                    </p>
+                    <label className={styles.moveLabel} htmlFor={`move-${application.id}`}>
+                      Move to
+                    </label>
+                    <select
+                      id={`move-${application.id}`}
+                      className={ui.select}
+                      value=""
+                      disabled={moving === application.id}
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        if (next) void move(application, next as Stage);
+                      }}
+                    >
+                      <option value="">Choose…</option>
+                      {application.allowed_next.map((stage) => (
+                        <option key={stage} value={stage}>
+                          {STAGE_LABELS[stage] ?? stage}
+                        </option>
+                      ))}
+                    </select>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
-      </section>
+        </div>
+      )}
 
-      <section className={styles.principles} aria-labelledby="principles-heading">
-        <h2 id="principles-heading" className={styles.principlesTitle}>
-          Three things this does differently
-        </h2>
-        <dl className={styles.principleList}>
-          <div className={styles.principle}>
-            <dt>The score is computed</dt>
-            <dd>
-              Each requirement is compared against your profile items by embedding similarity, and
-              the score is the weighted coverage of those comparisons. A model never produces the
-              number, so the same inputs always give the same score and every point of it traces to
-              a specific line.
-            </dd>
-          </div>
-          <div className={styles.principle}>
-            <dt>Nothing is fabricated</dt>
-            <dd>
-              Every generated bullet cites the profile items it came from. A validator rejects any
-              bullet that cites nothing, cites something that does not exist, or introduces a skill
-              or a number absent from what it cited. Rejected bullets are regenerated once, then
-              dropped with a warning rather than kept.
-            </dd>
-          </div>
-          <div className={styles.principle}>
-            <dt>Nothing is sent for you</dt>
-            <dd>
-              Follow-ups are drafted when an application has sat in a stage too long, and they stay
-              drafts. You edit them, you decide, and you send from your own mail client.
-            </dd>
-          </div>
-        </dl>
-      </section>
+      {board.closed.length > 0 ? (
+        <section className={styles.closed}>
+          <h2 className={styles.closedTitle}>Closed</h2>
+          <ul className={styles.closedList}>
+            {board.closed.map((application) => (
+              <li className={styles.closedRow} key={application.id}>
+                <Link href={`/jobs/${application.job_id}`}>
+                  {application.title ?? "Untitled posting"}
+                </Link>
+                <span className={styles.closedStage}>
+                  {STAGE_LABELS[application.stage] ?? application.stage}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

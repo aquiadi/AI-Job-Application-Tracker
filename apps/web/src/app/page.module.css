@@ -1,201 +1,149 @@
 .page {
-  display: grid;
-  gap: var(--space-9);
-}
-
-.page > * {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
   min-width: 0;
 }
 
-/* ------------------------------------------------------------------ intro */
-
-.intro {
-  display: grid;
-  gap: var(--space-5);
-  max-width: var(--measure-serif);
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .title {
   font-family: var(--font-display);
-  font-size: var(--text-display);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-tight);
-  letter-spacing: var(--tracking-normal);
-}
-
-.lead {
-  font-size: var(--text-lead);
-  line-height: var(--leading-body);
-  color: var(--ink-muted);
-  max-width: var(--measure);
-}
-
-/* ---------------------------------------------------------------- example */
-
-.example {
-  background: var(--surface);
-  border: var(--border-hairline) solid var(--rule);
-  border-radius: var(--radius-panel);
-  overflow: hidden;
-  max-width: 860px;
-}
-
-.exampleHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3) var(--space-6);
-  padding: var(--space-5) var(--space-6);
-  border-bottom: var(--border-hairline) solid var(--rule);
-  background: var(--surface-sunken);
-}
-
-.exampleTitle {
-  font-size: var(--text-body);
+  font-size: var(--text-heading);
   font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-normal);
-}
-
-.exampleNote {
-  font-size: var(--text-small);
-  color: var(--ink-faint);
+  letter-spacing: var(--tracking-tight);
   margin: 0;
 }
 
-.requirements {
-  display: grid;
+.note {
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+  max-width: var(--measure);
+  margin: 0;
 }
 
-.requirement {
+/* Six columns that scroll horizontally rather than wrapping. A pipeline is ordered,
+   and wrapping it puts Onsite under Saved, which reads as a second row of the same
+   thing rather than a later stage. */
+.board {
   display: grid;
-  grid-template-columns: 5.5rem 1fr;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(13rem, 1fr);
   gap: var(--space-5);
-  align-items: start;
-  padding: var(--space-5) var(--space-6);
+  overflow-x: auto;
+  padding-bottom: var(--space-4);
 }
 
-.requirement + .requirement {
-  border-top: var(--border-hairline) solid var(--rule);
-}
-
-/* The three states differ by fill and by border style, not only by colour, so the
- * breakdown survives greyscale printing and colour vision deficiency. */
-.chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-1) var(--space-3);
-  font-size: var(--text-micro);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-wide);
-  border-radius: var(--radius-control);
-  border: var(--border-hairline) solid transparent;
-  white-space: nowrap;
-}
-
-.chip[data-coverage="covered"] {
-  background: var(--evidence-covered-fill);
-  color: var(--evidence-covered-ink);
-  border-color: var(--evidence-covered-edge);
-}
-
-.chip[data-coverage="partial"] {
-  background: var(--evidence-partial-fill);
-  color: var(--evidence-partial-ink);
-  border-color: var(--evidence-partial-edge);
-}
-
-.chip[data-coverage="missing"] {
-  background: var(--evidence-missing-fill);
-  color: var(--evidence-missing-ink);
-  border-color: var(--evidence-missing-edge);
-  border-style: dashed;
-}
-
-.requirementBody {
-  display: grid;
-  gap: var(--space-2);
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   min-width: 0;
 }
 
-.requirementText {
-  margin: 0;
-  max-width: none;
-}
-
-.kind {
-  color: var(--ink-faint);
+.columnTitle {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
   font-size: var(--text-small);
-  white-space: nowrap;
-}
-
-.evidence {
-  margin: 0;
-  max-width: none;
-  font-size: var(--text-small);
-  color: var(--ink-muted);
-}
-
-.noEvidence {
-  margin: 0;
-  max-width: none;
-  font-size: var(--text-small);
-  color: var(--ink-faint);
-  font-style: italic;
-}
-
-/* ------------------------------------------------------------- principles */
-
-.principles {
-  display: grid;
-  gap: var(--space-6);
-}
-
-.principlesTitle {
-  font-size: var(--text-title);
-}
-
-.principleList {
-  display: grid;
-  gap: var(--space-7);
-  /* `min(16rem, 100%)` rather than a bare `16rem`: with a bare minimum, the three
-   * columns contribute 3 x 16rem to the grid's intrinsic width, which floors the
-   * whole document at ~840px and makes every narrower screen scroll sideways. */
-  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
-  max-width: 1040px;
-}
-
-.principle {
-  display: grid;
-  gap: var(--space-3);
-  align-content: start;
-  border-top: var(--border-emphasis) solid var(--accent);
-  padding-top: var(--space-4);
-}
-
-.principle dt {
   font-weight: var(--weight-semibold);
-}
-
-.principle dd {
-  margin: 0;
   color: var(--ink-muted);
-  font-size: var(--text-small);
-  line-height: var(--leading-body);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--border-hairline) solid var(--rule-strong);
+  margin: 0;
 }
 
-@media (max-width: 640px) {
-  .title {
-    font-size: var(--text-heading);
-  }
+.count {
+  color: var(--ink-faint);
+  font-weight: var(--weight-regular);
+}
 
-  .requirement {
-    grid-template-columns: 1fr;
-    gap: var(--space-3);
-  }
+.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
 
-  .chip {
-    justify-self: start;
-  }
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--surface);
+  border: var(--border-hairline) solid var(--rule);
+  border-radius: var(--radius-panel);
+  padding: var(--space-5);
+  min-width: 0;
+}
+
+.cardTitle {
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  text-decoration: none;
+  line-height: var(--leading-snug);
+}
+
+.cardTitle:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.company,
+.age {
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.age {
+  color: var(--ink-faint);
+  font-size: var(--text-micro);
+}
+
+.moveLabel {
+  font-size: var(--text-micro);
+  color: var(--ink-faint);
+  margin-top: var(--space-3);
+}
+
+.closed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.closedTitle {
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.closedList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--border-hairline) solid var(--rule);
+}
+
+.closedRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-4) 0;
+  border-bottom: var(--border-hairline) solid var(--rule);
+  font-size: var(--text-small);
+}
+
+.closedStage {
+  color: var(--ink-faint);
+  font-size: var(--text-micro);
 }

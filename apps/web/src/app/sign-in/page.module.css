@@ -1,0 +1,62 @@
+.page {
+  max-width: 26rem;
+  margin: var(--space-9) auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+.lead {
+  color: var(--ink-muted);
+  line-height: var(--leading-body);
+  margin: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  background: var(--surface);
+  border: var(--border-hairline) solid var(--rule);
+  border-radius: var(--radius-panel);
+  padding: var(--space-7);
+}
+
+.switch {
+  font: inherit;
+  font-size: var(--text-small);
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Said plainly rather than styled as a warning. It is a fact about this environment,
+   and dressing it as an alert would train people to ignore alerts. */
+.emulator {
+  font-size: var(--text-small);
+  color: var(--ink-faint);
+  line-height: var(--leading-body);
+  border-left: var(--border-emphasis) solid var(--rule-strong);
+  padding-left: var(--space-5);
+  margin: 0;
+}

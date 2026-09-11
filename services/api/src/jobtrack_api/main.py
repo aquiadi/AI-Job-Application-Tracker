@@ -13,6 +13,7 @@ from collections.abc import AsyncIterator
 from typing import Final
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
@@ -90,6 +91,18 @@ app = FastAPI(
     version=__version__,
     lifespan=lifespan,
     generate_unique_id_function=_operation_id,
+)
+
+# An explicit origin list, never "*". Every request carries an Authorization
+# header, and a wildcard would let any site a signed-in user visits call this API
+# with their token. `allow_credentials` stays off because the token travels in a
+# header rather than a cookie, and enabling it would widen what a browser sends.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=list(get_settings().allowed_origins),
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    max_age=600,
 )
 
 install_error_handlers(app)

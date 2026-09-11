@@ -1,0 +1,73 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.links {
+  display: flex;
+  gap: var(--space-6);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.link {
+  color: var(--ink-muted);
+  text-decoration: none;
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-emphasis) solid transparent;
+}
+
+.link:hover {
+  color: var(--ink);
+}
+
+/* The current page is marked by weight and a rule, not by colour alone. */
+.link[aria-current="page"] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.email {
+  font-size: var(--text-small);
+  color: var(--ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 18ch;
+}
+
+.signOut {
+  font: inherit;
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.signOut:hover {
+  color: var(--ink);
+}
+
+@media (max-width: 30rem) {
+  .email {
+    display: none;
+  }
+}

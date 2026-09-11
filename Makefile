@@ -97,6 +97,14 @@ test-integration: up migrate ## Tests needing the local stack, including cross-t
 web-check: ## Typecheck, lint, format-check and contrast-check the web app
 	cd $(WEB_DIR) && npm run check
 
+.PHONY: web-build
+web-build: ## Production build of the web app
+	cd $(WEB_DIR) && npm run build
+
+.PHONY: client
+client: ## Regenerate apps/web API types from the running api's OpenAPI document
+	./scripts/generate_client.sh
+
 # --------------------------------------------------------------------------
 # Database
 # --------------------------------------------------------------------------

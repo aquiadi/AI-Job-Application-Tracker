@@ -1,0 +1,195 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.breadcrumb {
+  font-size: var(--text-small);
+  margin: 0;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--text-heading);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  max-width: var(--measure-serif);
+  margin: 0;
+}
+
+.meta {
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+
+.source {
+  font-size: var(--text-small);
+}
+
+/* The score is the one place this interface raises its voice. Everything else is
+   quiet so that this reads immediately. */
+.scorePanel {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-7);
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: var(--border-hairline) solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-panel);
+  padding: var(--space-7);
+}
+
+.scoreFigure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.scoreValue {
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreOf {
+  color: var(--ink-faint);
+  font-size: var(--text-small);
+}
+
+.scoreText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.scoreTitle {
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.scoreBreakdown {
+  font-size: var(--text-lead);
+  line-height: var(--leading-snug);
+  margin: 0;
+}
+
+.scoreNote {
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+  line-height: var(--leading-body);
+  max-width: var(--measure);
+  margin: 0;
+}
+
+.matches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.match {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+  padding: var(--space-5) 0;
+  border-bottom: var(--border-hairline) solid var(--rule);
+}
+
+.match:first-child {
+  padding-top: 0;
+}
+
+.match:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.matchBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.requirement {
+  line-height: var(--leading-snug);
+  max-width: var(--measure);
+  margin: 0;
+}
+
+.kind {
+  color: var(--ink-faint);
+  font-size: var(--text-small);
+}
+
+/* Evidence is set in the serif to separate it from the posting's own words. */
+.evidence {
+  font-family: var(--font-display);
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+  line-height: var(--leading-serif);
+  max-width: var(--measure-serif);
+  border-left: var(--border-emphasis) solid var(--accent-wash);
+  padding-left: var(--space-5);
+  margin: 0;
+}
+
+.gap {
+  font-size: var(--text-small);
+  color: var(--ink-faint);
+  margin: 0;
+}
+
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.skill {
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-control);
+  padding: var(--space-2) var(--space-4);
+}
+
+.responsibilities {
+  margin: 0;
+  padding-left: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: var(--ink-muted);
+  max-width: var(--measure);
+  line-height: var(--leading-body);
+}

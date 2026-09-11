@@ -15,10 +15,25 @@
 .header {
   display: flex;
   align-items: center;
-  gap: var(--space-6);
+  gap: var(--space-7);
   padding-inline: var(--space-6);
   border-bottom: var(--border-hairline) solid var(--rule);
   background: var(--surface);
+  /* The nav is the flexible half; the wordmark keeps its intrinsic width. */
+  min-width: 0;
+}
+
+.header > nav {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The wordmark is the one thing that goes when there is no room for it: the nav is
+   how the app is used, and a title is not. */
+@media (max-width: 34rem) {
+  .header .wordmark {
+    display: none;
+  }
 }
 
 .wordmark {

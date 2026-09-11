@@ -87,6 +87,12 @@ async def fetch_posting(url: str, *, client: httpx.AsyncClient | None = None) ->
     return adapter.parse(response.content, source_url=url)
 
 
-def parse_pasted(text: str, *, source_url: str = "") -> CanonicalPosting:
+def parse_pasted(
+    text: str,
+    *,
+    source_url: str = "",
+    title: str | None = None,
+    company: str | None = None,
+) -> CanonicalPosting:
     """Normalise pasted text. No network, no routing."""
-    return PASTED.parse(text.encode("utf-8"), source_url=source_url)
+    return PASTED.parse(text.encode("utf-8"), source_url=source_url, title=title, company=company)

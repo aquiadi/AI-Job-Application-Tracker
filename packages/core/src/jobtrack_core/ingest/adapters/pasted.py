@@ -55,7 +55,14 @@ class PastedAdapter:
     def api_url(self, url: str) -> str:
         raise PostingParseError("pasted postings are not fetched")
 
-    def parse(self, payload: bytes, *, source_url: str) -> CanonicalPosting:
+    def parse(
+        self,
+        payload: bytes,
+        *,
+        source_url: str,
+        title: str | None = None,
+        company: str | None = None,
+    ) -> CanonicalPosting:
         text = payload.decode("utf-8", errors="replace")
         # A paste out of a browser's rendered view is text; a paste out of "view
         # source" or a developer tool is markup. Both happen, so both are handled.
@@ -69,12 +76,14 @@ class PastedAdapter:
                 f"{MIN_BODY_CHARS}. Paste the full description."
             )
 
+        # Title and company are taken from the caller when given and are never guessed
+        # from the first line of a paste. The person pasting knows the role they are
+        # looking at; inferring it is wrong often enough to be worse than asking.
         return CanonicalPosting(
             source_ats=SourceAts.PASTED,
             source_url=source_url or None,
-            # Title and company stay null. Guessing them from the first line of a paste
-            # is wrong often enough to be worse than an empty field the user can fill,
-            # and extraction reads them from the text anyway.
+            title=(title or "").strip() or None,
+            company=(company or "").strip() or None,
             body=body,
         )
 

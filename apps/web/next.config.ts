@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   typedRoutes: true,
+  // Next writes its own CLAUDE.md and AGENTS.md into this directory on dev start.
+  // This repository's CLAUDE.md is hand-written, lives at the root, and is listed
+  // in .git/info/exclude; a generated one beside it would be a second set of rules
+  // nobody wrote.
+  agentRules: false,
 };
 
 export default nextConfig;

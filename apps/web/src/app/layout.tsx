@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { IBM_Plex_Sans, Spectral } from "next/font/google";
 
+import { Nav } from "@/components/nav";
+import { SessionProvider } from "@/lib/session";
+
 import "@/styles/tokens.css";
 import "@/styles/base.css";
 import styles from "./layout.module.css";
@@ -48,17 +51,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${plexSans.variable} ${spectral.variable}`}>
       <body>
-        <a className="skip-link" href="#main">
-          Skip to content
-        </a>
-        <div className={styles.shell}>
-          <header className={styles.header}>
-            <span className={styles.wordmark}>Job Application Tracker</span>
-          </header>
-          <main id="main" className={styles.main}>
-            {children}
-          </main>
-        </div>
+        <SessionProvider>
+          <a className="skip-link" href="#main">
+            Skip to content
+          </a>
+          <div className={styles.shell}>
+            <header className={styles.header}>
+              <span className={styles.wordmark}>Job Application Tracker</span>
+              <Nav />
+            </header>
+            <main id="main" className={styles.main}>
+              {children}
+            </main>
+          </div>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -1,0 +1,170 @@
+/* Shared primitives. One file rather than a module per component: these are small,
+   they are used together, and splitting them would mean five imports per page. */
+
+.panel {
+  background: var(--surface);
+  border: var(--border-hairline) solid var(--rule);
+  border-radius: var(--radius-panel);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: var(--border-hairline) solid var(--rule);
+}
+
+.panelTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+
+.panelNote {
+  color: var(--ink-muted);
+  font-size: var(--text-small);
+  margin: 0;
+}
+
+.panelBody {
+  padding: var(--space-6);
+}
+
+.button {
+  font: inherit;
+  font-weight: var(--weight-medium);
+  color: var(--on-accent);
+  background: var(--accent);
+  border: var(--border-hairline) solid var(--accent);
+  border-radius: var(--radius-control);
+  padding: var(--space-4) var(--space-6);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--easing),
+    border-color var(--duration-fast) var(--easing);
+}
+
+.button:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondary {
+  composes: button;
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--edge);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--surface-sunken);
+  border-color: var(--edge);
+}
+
+.danger {
+  composes: secondary;
+  color: var(--alert);
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--alert-wash);
+}
+
+.small {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-small);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.label {
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  color: var(--ink-muted);
+}
+
+.input,
+.textarea,
+.select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: var(--border-hairline) solid var(--edge);
+  border-radius: var(--radius-control);
+  padding: var(--space-4) var(--space-5);
+  width: 100%;
+  min-width: 0;
+}
+
+.textarea {
+  min-height: 9rem;
+  resize: vertical;
+  line-height: var(--leading-body);
+}
+
+.error {
+  color: var(--alert);
+  background: var(--alert-wash);
+  border: var(--border-hairline) solid var(--alert);
+  border-radius: var(--radius-control);
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--text-small);
+  margin: 0;
+}
+
+.empty {
+  color: var(--ink-muted);
+  max-width: var(--measure);
+  margin: 0;
+}
+
+/* Evidence density: covered reads as solid ink, partial as a wash, missing as an
+   outline only. The scale is the point — a reader should be able to see coverage
+   across a list without reading a single label. */
+.chip {
+  display: inline-block;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  padding: var(--space-1) var(--space-4);
+  border-radius: 999px;
+  border: var(--border-hairline) solid transparent;
+  white-space: nowrap;
+}
+
+.chip[data-coverage="covered"] {
+  background: var(--evidence-covered-fill);
+  color: var(--evidence-covered-ink);
+  border-color: var(--evidence-covered-edge);
+}
+
+.chip[data-coverage="partial"] {
+  background: var(--evidence-partial-fill);
+  color: var(--evidence-partial-ink);
+  border-color: var(--evidence-partial-edge);
+}
+
+.chip[data-coverage="missing"] {
+  background: var(--evidence-missing-fill);
+  color: var(--evidence-missing-ink);
+  border-color: var(--evidence-missing-edge);
+}
+
+.spinner {
+  color: var(--ink-faint);
+  font-size: var(--text-small);
+}

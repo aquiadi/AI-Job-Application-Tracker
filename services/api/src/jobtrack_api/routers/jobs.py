@@ -49,6 +49,10 @@ class SaveJob(BaseModel):
 
     url: str | None = Field(default=None, max_length=2048)
     text: str | None = Field(default=None, max_length=MAX_PASTED_CHARS)
+    #: Only meaningful with `text`. A board states both, and the pasted path has no
+    #: reliable way to know them — so it asks rather than guessing.
+    title: str | None = Field(default=None, max_length=255)
+    company: str | None = Field(default=None, max_length=255)
 
     @model_validator(mode="after")
     def _exactly_one(self) -> Self:
@@ -247,7 +251,9 @@ async def save_job(
         posting = (
             await fetch_posting(body.url)
             if body.url
-            else parse_pasted(body.text or "", source_url="")
+            else parse_pasted(
+                body.text or "", source_url="", title=body.title, company=body.company
+            )
         )
     except IngestError as exc:
         # The message is the adapter's, which is written to be shown: it names the
