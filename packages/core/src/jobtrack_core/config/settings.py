@@ -152,6 +152,17 @@ class Settings(BaseSettings):
                 f"ENVIRONMENT=cloud requires: {', '.join(missing)}. "
                 "See .env.example for the full list."
             )
+
+        # The auth emulator does not sign its tokens, so a verifier pointed at it
+        # accepts anything with the right claims. A stray FIREBASE_AUTH_EMULATOR_HOST
+        # in a deployed environment would be a complete authentication bypass, and it
+        # is exactly the kind of variable that gets copied from a local .env.
+        if self.auth_emulator_host:
+            raise ValueError(
+                "FIREBASE_AUTH_EMULATOR_HOST is set with ENVIRONMENT=cloud. The "
+                "emulator issues unsigned tokens; using it outside local development "
+                "would accept any token."
+            )
         return self
 
     @property

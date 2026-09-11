@@ -10,10 +10,16 @@ project's environment variables removed.
 from __future__ import annotations
 
 import os
+import subprocess
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+
+REPO_ROOT = Path(__file__).resolve().parent
+#: Integration tests run against a second database so a test run never destroys
+#: whatever is in the development one.
+TEST_DB = "jobtrack_test"
 
 # Prefixes owned by this project. Anything matching is cleared before each test.
 _OWNED_PREFIXES: tuple[str, ...] = (
@@ -42,3 +48,45 @@ def isolated_environment(
             monkeypatch.delenv(name, raising=False)
     monkeypatch.chdir(tmp_path)
     yield monkeypatch
+
+
+@pytest.fixture(scope="session")
+def db_port() -> str:
+    """Host port the compose Postgres is published on."""
+    return os.environ.get("DB_PORT", "5433")
+
+
+@pytest.fixture(scope="session")
+def migrated_database(db_port: str) -> Iterator[None]:
+    """Bring the test database to head once, before any integration test runs.
+
+    Alembic is invoked as a subprocess rather than through its Python API so that the
+    test exercises the same command the migrate job runs. A migration that works here
+    and fails in deployment is one less thing that can happen.
+    """
+    env = {
+        **os.environ,
+        "ENVIRONMENT": "local",
+        "DB_NAME": TEST_DB,
+        "DB_PORT": db_port,
+        "PYTHONPATH": ":".join(
+            str(REPO_ROOT / p)
+            for p in (
+                "packages/core/src",
+                "services/api/src",
+                "services/worker/src",
+                "evals/src",
+            )
+        ),
+    }
+    result = subprocess.run(
+        ["uv", "run", "alembic", "-c", "packages/core/alembic.ini", "upgrade", "head"],  # noqa: S607
+        cwd=REPO_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        pytest.fail(f"alembic upgrade failed:\n{result.stdout}\n{result.stderr}")
+    yield

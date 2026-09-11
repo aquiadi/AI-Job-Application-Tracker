@@ -131,3 +131,24 @@ def test_get_settings_is_cached(isolated_environment: pytest.MonkeyPatch) -> Non
         assert get_settings() is get_settings()
     finally:
         get_settings.cache_clear()
+
+
+class TestEmulatorCannotReachCloud:
+    def test_the_auth_emulator_is_refused_in_cloud(
+        self, isolated_environment: pytest.MonkeyPatch
+    ) -> None:
+        # The emulator does not sign tokens. A stray host variable copied from a local
+        # .env into a deployed environment would accept any token at all, so it has to
+        # fail at startup rather than at the first request.
+        with pytest.raises(ValidationError, match="unsigned tokens"):
+            _load(
+                isolated_environment,
+                **_COMPLETE_CLOUD_ENV,
+                FIREBASE_AUTH_EMULATOR_HOST="localhost:9099",
+            )
+
+    def test_the_auth_emulator_is_fine_locally(
+        self, isolated_environment: pytest.MonkeyPatch
+    ) -> None:
+        settings = _load(isolated_environment, FIREBASE_AUTH_EMULATOR_HOST="localhost:9099")
+        assert settings.auth_emulator_host == "localhost:9099"

@@ -127,4 +127,71 @@ The full intended set. Each appears in the Makefile in the commit that makes it 
 
 ## M1 — Data and authentication
 
-Not yet specified.
+### Goal
+
+A database where one user cannot read another's rows even if the application asks it
+to, and an API that knows who is calling.
+
+### Delivered
+
+**Schema.** Twelve tables. Every tenant table carries `user_id`; `users` is scoped by
+its own `id`; `jd_extraction_cache` is global by design and holds only public posting
+content. Every vector column carries `embedding_model`, `embedding_dim` and
+`embedding_task_type`, because the three together identify the space and a comparison
+across spaces returns a number rather than an error.
+
+**Row-level security.** `ENABLE` plus `FORCE` on all eleven tenant tables, with a
+policy per table comparing against
+`NULLIF(current_setting('app.user_id', true), '')::uuid`. The `NULLIF` is not
+decoration: an empty setting raises on the cast, which would turn a missing tenant
+context into a 500 rather than an empty result. Absent context matches no row.
+
+Three roles, and the separation is the point. `jobtrack_owner` owns the schema and runs
+Alembic. `jobtrack_app` owns nothing and holds only DML grants, because Postgres does
+not enforce a policy against a table's owner unless the table also sets `FORCE`, and
+relying on `FORCE` alone leaves no margin. `stage_events` is append-only by grant —
+`INSERT` and `SELECT`, nothing else — because every funnel number derives from it.
+
+**The tenant is applied with `set_config(..., true)`, not `SET LOCAL`.** `SET LOCAL`
+takes a literal rather than a bind parameter, so using it would mean formatting a user
+id into SQL text. It is applied inside the transaction on every request, because a
+pooled connection outlives the request and a setting applied at checkout would hand one
+user's context to the next.
+
+**Authentication.** Identity Platform ID tokens, verified against Google's signing
+certificates with a TTL cache so there is no HTTP round trip per request. The issuer is
+checked explicitly: `google.auth` verifies signature, expiry and audience but not
+`iss`, and a token from a different Firebase project carries a genuine Google
+signature. Emulator tokens are unsigned, so that path is only reachable when
+`FIREBASE_AUTH_EMULATOR_HOST` is set, and `Settings` refuses to start if that happens
+alongside `ENVIRONMENT=cloud`.
+
+**The user id is derived, not looked up.** `uuid5(namespace, subject)`. A tenant-scoped
+query needs the internal id before it can set the RLS context, and finding it by
+subject would be a query against a tenant-scoped table — normally resolved with a
+privileged lookup that bypasses RLS. Deriving it removes the problem: the tenant
+context is computable from the token alone, and no code path reads user rows without a
+tenant set. The trade is that the id is a pure function of the subject, so it is
+computable by anyone holding it. Ids are not secrets here; the policies are what
+protect a row.
+
+**`GET /me`** returns the caller's account and provisions it on first sign-in with
+`ON CONFLICT DO NOTHING`, because a browser loading the shell and its first data call
+together produces two of these at once on a new account.
+
+### Not in M1
+
+No deploy: that needs a project id and `gcloud` credentials. No outbox relay — the
+table and its policy exist, the relay and its dedicated role arrive with M2 when there
+are events to publish. No `DELETE /me` or `GET /me/export` yet, though `ON DELETE
+CASCADE` from `users` is what will make deletion complete rather than a sweep that
+misses a table added later.
+
+### Verification
+
+126 unit tests and 20 integration tests. The cross-tenant test asserts four separate
+things — reads, default-deny, writes, and policy coverage — because "RLS is on" is four
+claims and a read-only test passes happily while writes are unprotected.
+
+It was checked against a deliberate regression: disabling RLS on one table fails 7 of
+the 12 RLS tests. A test that cannot fail is not evidence.

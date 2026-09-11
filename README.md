@@ -23,8 +23,8 @@ flattering.
 | # | Milestone | State |
 |---|---|---|
 | 0 | Scaffold, tooling, design system, sandbox verification | **Done** |
-| 1 | Schema, row-level security with cross-tenant test, Identity Platform auth | Next |
-| 2 | Ingestion: Greenhouse, Lever, pasted text; extraction eval over 15 labelled JDs | Not started |
+| 1 | Schema, row-level security with cross-tenant test, Identity Platform auth | **Done**, not deployed |
+| 2 | Ingestion: Greenhouse, Lever, pasted text; extraction eval over 15 labelled JDs | Next |
 | 3 | Profile import from PDF, deterministic fit score, threshold calibration | Not started |
 | 4 | Grounded tailoring, grounding validator, PDF rendering, faithfulness eval | Not started |
 | 5 | Kanban board with stage history | Not started |
@@ -232,9 +232,10 @@ ones.
 
 | Measurement | Value | Command |
 |---|---|---|
-| Python tests passing | 40 | `make test` |
+| Unit tests passing | 126 | `make test` |
+| Integration tests passing (real Postgres) | 20 | `make test-integration` |
 | Token contrast pairings at or above WCAG AA | 44 of 44 | `cd apps/web && npm run check:contrast` |
-| Python source lines, excluding tests | 453 | `find packages services evals -name '*.py' -path '*/src/*' \| xargs wc -l` |
+| Python source lines, excluding tests | 2909 | `find packages services evals -name '*.py' -path '*/src/*' \| xargs wc -l` |
 
 The eval suite is the point of this project and it does not exist yet. When it does,
 `make eval` writes `evals/reports/latest.md` and a JSON summary, and this section
@@ -279,11 +280,13 @@ and `gcloud` has no credentials on my machine, so `make sandbox-check` currently
 AlloyDB or Vertex AI is unavailable in the sandbox, the plan changes rather than the
 schedule slipping.
 
-**There is no schema.** M0 is scaffolding, configuration, logging, the design system
-and the sandbox check. The tables, the RLS policies and the cross-tenant test are M1,
-and the privilege split they depend on is the one piece of the database design I have
-verified end to end — `jobtrack_app` is correctly refused when it tries to create a
-table.
+**Nothing is ingested yet.** M1 gave the system a schema, tenant isolation and
+authentication, so `GET /me` works end to end against a real Postgres. There is still
+no way to add a job posting, which is M2, and no Gemini call anywhere in the codebase.
+
+**The outbox has no relay.** The table, its index and its policy exist; the process
+that publishes rows to Pub/Sub, and the dedicated role it will connect as, arrive with
+M2 when there are events worth publishing.
 
 **The fit score's agreement with human judgement is unknown.** See above. It is the
 number I most want and the one I am least willing to guess at.

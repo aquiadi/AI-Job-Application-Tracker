@@ -79,7 +79,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # Tests assert, use fixtures positionally, and hardcode sample values on purpose.
-"**/tests/**" = ["S101", "ANN201", "ANN001", "S105", "S106"]
+"**/tests/**" = ["S101", "ANN201", "ANN001", "S105", "S106", "SLF001"]
 # Alembic writes these. Column definitions are one long line each, and reflowing
 # generated code by hand is churn that makes the next autogenerate diff unreadable.
 "packages/core/src/jobtrack_core/db/migrations/versions/*" = ["E501"]
@@ -121,6 +121,13 @@ explicit_package_bases = true
 # The AlloyDB connector ships no py.typed marker as of 1.14.0 (checked 2026-09-11).
 module = ["google.cloud.alloydb.connector.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# google-auth ships py.typed but leaves jwt.decode, jwt.encode and the crypt signers
+# unannotated, so strict mode rejects every call into them. Narrowed to calls: their
+# arguments and return values are still checked everywhere they are used.
+module = ["jobtrack_core.auth", "jobtrack_core.auth.*"]
+disallow_untyped_calls = false
 
 # --------------------------------------------------------------------------
 # pytest
