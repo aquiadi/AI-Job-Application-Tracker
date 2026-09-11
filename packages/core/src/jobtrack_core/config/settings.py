@@ -85,8 +85,10 @@ class VertexSettings(BaseSettings):
     generate_model: str = Field(default="gemini-3.5-flash", alias="GEMINI_GENERATE_MODEL")
     embedding_model: str = Field(default="gemini-embedding-001", alias="EMBEDDING_MODEL")
 
-    # 768 rather than the model's native 3072: pgvector's HNSW index refuses more
-    # than 2000 dimensions, and gemini-embedding-001 supports Matryoshka truncation.
+    # 768 rather than the model's native 3072. pgvector indexes the `vector` type up
+    # to 2,000 dimensions, and while `halfvec` reaches 4,000, 768 costs a quarter of
+    # the storage and builds a far smaller index on the smallest AlloyDB shape.
+    # See docs/adr/0004-model-and-embedding-selection.md.
     embedding_dim: Annotated[int, Field(ge=1, le=2000)] = Field(default=768, alias="EMBEDDING_DIM")
 
     location: str = Field(default="global", alias="VERTEX_LOCATION")

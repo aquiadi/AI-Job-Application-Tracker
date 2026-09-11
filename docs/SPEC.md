@@ -51,7 +51,8 @@ errors.
 `.env` file. Three separate Google Cloud locations, not one
 ([ADR 2](adr/0002-region-and-vertex-endpoints.md)). `ENVIRONMENT=cloud` fails at
 startup listing every missing variable at once rather than one per deploy.
-`EMBEDDING_DIM` is capped at 2000 because pgvector's HNSW index is.
+`EMBEDDING_DIM` is capped at 2000, which is pgvector's index limit for the `vector`
+type.
 
 **Logging.** Structured JSON carrying `severity` and `message` so Cloud Logging reads
 it as typed rather than as text at INFO. A processor drops any log call carrying a

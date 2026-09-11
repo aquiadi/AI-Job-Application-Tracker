@@ -51,11 +51,17 @@ there and not worth paying on extraction. Both are read from the environment, an
 the extraction eval measures whether flash-lite actually holds up; if its
 hallucinated-field rate is materially worse, the fix is one variable.
 
-**`gemini-embedding-001`, 768 dimensions, `SEMANTIC_SIMILARITY`.** 768 is forced by
-pgvector: its HNSW index rejects vectors above 2000 dimensions, so the native 3072
-would leave the vectors unindexable. Matryoshka truncation to 768 is supported, and
-truncated vectors are re-normalised in application code before they are stored, so
-cosine distance and inner product agree.
+**`gemini-embedding-001`, 768 dimensions, `SEMANTIC_SIMILARITY`.** pgvector indexes
+the `vector` type up to 2,000 dimensions, so the model's native 3072 cannot go into an
+HNSW index as a `vector`. It is not strictly impossible — `halfvec` indexes up to
+4,000 dimensions, and pgvector 0.8.6 (the version in the local image) has it — but
+768 via Matryoshka truncation is the better trade on the smallest AlloyDB shape: a
+quarter of the storage per row, a much smaller index to hold in memory, and a faster
+index build. Truncated vectors are re-normalised in application code before they are
+stored, so cosine distance and inner product agree.
+
+If recall turns out to be the binding constraint rather than memory, `halfvec(3072)`
+is the escape hatch, and it is a re-embed plus a migration rather than a redesign.
 
 `SEMANTIC_SIMILARITY` is the default because of what is actually being compared. A
 job requirement ("distributed transactions and idempotent processing") and a profile
@@ -91,10 +97,12 @@ nothing in this product is multimodal — resumes arrive as PDFs but are parsed 
 before they are ever embedded. The `embedding_model` column means switching later is
 a backfill job, not a migration.
 
-**Store the full 3072 dimensions and use a flat index.** Exact search over a few
-thousand vectors is fast, and it avoids the truncation question entirely. Rejected
-because it forecloses HNSW without measuring anything, and because four times the
-storage per vector is a real cost on the smallest AlloyDB shape.
+**Store the full 3072 dimensions.** Either as `halfvec(3072)` with an HNSW index, or
+as `vector(3072)` with exact search, which is fast enough over a few thousand rows and
+avoids the truncation question entirely. Rejected because four times the storage per
+row and a correspondingly larger index are a real cost on the smallest AlloyDB shape,
+and because MRL truncation is designed for exactly this trade. Worth revisiting only
+if the calibration eval shows 768 losing recall that matters.
 
 ## Consequences
 
