@@ -95,3 +95,33 @@ synced `~/Documents`. `PYTHONPATH` is set explicitly in the Makefile and pytest
 configuration so imports do not depend on it, but `uv run` on some other entry point
 may still surprise someone. Moving the repository outside the synced directory removes
 the problem entirely.
+
+## Added during M2 and M3, deferred deliberately
+
+**A cross-encoder reranker over the fused candidates.** Better quality than RRF on
+paper, and a second model call per requirement per scoring pass. On a limited-credit
+sandbox that is a real cost, and the value it adds here is unmeasured.
+[ADR 12](adr/0012-hybrid-retrieval-with-rrf.md).
+
+**Tuning RRF's `k`, and the HNSW build parameters.** Both are at their published
+defaults. Moving them without a benchmark is guessing, and the benchmark is the same
+one deferred in M0.
+
+**Multilingual postings.** The `tsvector` columns are generated with a hardcoded
+`english` configuration, because a generated column requires an immutable expression
+and `to_tsvector(regconfig, text)` is only immutable with a literal configuration.
+Supporting another language means a second column or a stored language per row.
+
+**OCR for scanned resumes.** A PDF with no text layer is refused with a message saying
+so. OCR would be a second dependency, a second failure mode, and a quality floor low
+enough that every item it produced would need reviewing word by word regardless.
+
+**Re-embedding when the model changes.** Every vector row stores its model, dimension
+and task type, so a mismatch is detectable. The job that finds and re-embeds stale rows
+is not written; today the fix is to clear the embedding columns and let the normal path
+re-embed.
+
+**A responsive regression test.** Still CSS discipline plus a manual browser check
+rather than a test in `make check`. The browser drive that verified the M2–M5 flow is a
+scratch script, not a committed suite; making it one means Playwright in CI, which
+means the deploy pipeline that is itself deferred.

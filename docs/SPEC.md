@@ -13,10 +13,10 @@ Each item is deployed to Cloud Run before the next one starts.
 |---|---|---|
 | 0 | Scaffold, tooling, design system, sandbox check | Done |
 | 1 | Schema, RLS with cross-tenant test, Identity Platform auth | Done, not deployed |
-| 2 | JD ingestion: Greenhouse, Lever, pasted text; extraction eval | Not started |
-| 3 | Profile import (PDF) and the deterministic fit score | Not started |
+| 2 | JD ingestion: Greenhouse, Lever, pasted text; extraction eval | Built, eval pending |
+| 3 | Profile import (PDF) and the deterministic fit score | Built, calibration pending |
 | 4 | Grounded tailoring, validator, PDF rendering, faithfulness eval | Not started |
-| 5 | Kanban board with stage history | Not started |
+| 5 | Kanban board with stage history | Done |
 | 6 | Nudges: sweep, Cloud Tasks, drafts | Not started |
 | 7 | Cost instrumentation and `make cost-report` | Not started |
 
@@ -195,3 +195,107 @@ claims and a read-only test passes happily while writes are unprotected.
 
 It was checked against a deliberate regression: disabling RLS on one table fails 7 of
 the 12 RLS tests. A test that cannot fail is not evidence.
+
+---
+
+## M2 — Ingestion
+
+### Goal
+
+A posting a person actually has — a link they copied, or text they selected — becomes a
+row with its requirements separated, classified and embedded, without anyone waiting on
+a model inside a request.
+
+### Delivered
+
+**Two stages with a boundary.** Adapters turn a board's payload into
+`CanonicalPosting`; extraction sees only `CanonicalPosting`. Adding an ATS never
+touches a prompt. [ADR 11](adr/0011-canonical-posting-schema-and-ingestion.md).
+
+**Greenhouse and Lever, verified against their live APIs on 2026-09-11.** Greenhouse
+returns the description HTML-escaped inside `content`; Lever splits it across
+`description`, a `lists` array of titled sections, and `additional`. The section titles
+are kept, because "Required Qualifications" above a block of bullets is the signal that
+says those bullets are must-haves.
+
+**Pasted text, which is the source that always works.** Every ATS adapter is a bet that
+a vendor keeps an endpoint stable. This one is not, and it is why the product has no
+hard dependency on any board.
+
+**A global extraction cache.** Keyed by `sha256` over normalised body, title and
+company, plus `CANONICAL_SCHEMA_VERSION`. Two users who save the same posting pay for
+one extraction between them. It holds only posting content and has no `user_id`.
+
+**The outbox relay, under its own database role.** `jobtrack_relay` holds `SELECT` and
+`UPDATE` on `outbox` and no grant on any other table. Reading across tenants is the one
+thing the tenant policy forbids, and granting it to the application role would widen
+the application's reach by the same amount. Migration 0002.
+
+**Three model backends behind one protocol.**
+[ADR 10](adr/0010-llm-boundary-and-offline-operation.md). `vertex` is the real one;
+`cassette` replays recordings for tests; `heuristic` is rule-based, runs in-process and
+needs no credentials. `ENVIRONMENT=cloud` with a non-Vertex backend fails at startup.
+
+### Not delivered
+
+The extraction eval over 15 labelled postings. It needs Vertex credentials to produce
+the number that matters — Gemini's score against the heuristic baseline — and running
+only the baseline would report a floor as though it were a result.
+
+---
+
+## M3 — Profile and the fit score
+
+### Goal
+
+A score that a person can argue with: reproducible, traceable to a specific line of
+their own history, and never written by a model.
+
+### Delivered
+
+**The profile, in two halves.** Contact details on their own columns, never in prompt
+context, re-attached at render time. Evidence as `profile_items`, one row per bullet,
+each embedded on its own — a whole resume as one vector answers "is this person roughly
+like this posting", and a bullet answers the question the score actually asks.
+
+**Resume import, which is trusted by nobody.** A PDF's text layer becomes unreviewed
+items. Nothing unreviewed is counted by the score or citable by generated content. A
+scan is refused with a message saying why rather than importing nothing.
+
+**Hybrid retrieval fused by RRF.**
+[ADR 12](adr/0012-hybrid-retrieval-with-rrf.md). Dense retrieval over pgvector and
+lexical retrieval over a generated `tsvector`, each ranked, fused with `k=60`. Dense
+alone scores "Kubernetes" against "Docker and Terraform"; lexical alone scores every
+honest paraphrase as a gap.
+
+**One SQL statement.** Two lateral retrievals per requirement, fused, best-ranked item
+per requirement, coverage from that item's cosine similarity. Inside one transaction
+under the same RLS policy as everything else.
+
+### Not delivered
+
+Threshold calibration. `COVERED_AT` and `PARTIAL_AT` are constants with a default and
+are not yet moved against labelled pairs, which needs real embeddings. The interface
+shows the matched evidence beside every judgement so the number is checkable by eye in
+the meantime.
+
+---
+
+## M5 — The pipeline
+
+### Goal
+
+A board that is a view over history rather than a place state is kept.
+
+### Delivered
+
+**Transitions are refused in the domain layer.** The router calls
+`domain.stages.transition` and turns its refusal into a 409. The list of legal next
+moves the interface offers is derived from the same function, so the two cannot drift.
+
+**Every move appends a `stage_events` row**, including the one that creates the
+application. Without that first row the history would begin at the first move and the
+time an application spent in `Saved` — where most of them die — would be unmeasurable.
+
+**Terminal stages are separated from the pipeline** in the response, because they are
+outcomes rather than steps.

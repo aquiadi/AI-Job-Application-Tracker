@@ -16,18 +16,20 @@ Built for the AIM Code Kitchen audition on Google Cloud. Deadline 30 September 2
 
 ## Status
 
-I am building this in order, deploying each piece to Cloud Run before starting the
-next. Right now one milestone is finished. I would rather this table be accurate than
-flattering.
+I am building this in order. Four milestones are finished and the product runs end to
+end on a laptop — sign in, paste a posting, see it scored against your own history,
+move it through the pipeline — with no Google Cloud credentials and nothing to pay for.
+
+Nothing is deployed yet. I would rather this table be accurate than flattering.
 
 | # | Milestone | State |
 |---|---|---|
 | 0 | Scaffold, tooling, design system, sandbox verification | **Done** |
 | 1 | Schema, row-level security with cross-tenant test, Identity Platform auth | **Done**, not deployed |
-| 2 | Ingestion: Greenhouse, Lever, pasted text; extraction eval over 15 labelled JDs | Next |
-| 3 | Profile import from PDF, deterministic fit score, threshold calibration | Not started |
-| 4 | Grounded tailoring, grounding validator, PDF rendering, faithfulness eval | Not started |
-| 5 | Kanban board with stage history | Not started |
+| 2 | Ingestion: Greenhouse, Lever, pasted text; extraction eval over 15 labelled JDs | **Built**, eval needs credentials |
+| 3 | Profile import from PDF, deterministic fit score, threshold calibration | **Built**, calibration needs credentials |
+| 4 | Grounded tailoring, grounding validator, PDF rendering, faithfulness eval | Next |
+| 5 | Kanban board with stage history | **Done** |
 | 6 | Follow-up nudges: Scheduler, sweep, Cloud Tasks, drafts | Not started |
 | 7 | Cost instrumentation and `make cost-report` | Not started |
 
@@ -226,16 +228,23 @@ defect the first time it ran.
 
 ## What is measured
 
-Every number here comes from a command in this repo. There are not many yet, because
-only M0 is done, and I would rather show three real numbers than a table of plausible
-ones.
+Every number here comes from a command in this repo. These are counts and checks, not
+quality measurements — the quality numbers need Vertex AI credentials, and I am not
+going to invent them in the meantime.
 
 | Measurement | Value | Command |
 |---|---|---|
-| Unit tests passing | 126 | `make test` |
-| Integration tests passing (real Postgres) | 20 | `make test-integration` |
+| Unit tests passing | 209 | `make test` |
+| Integration tests passing (real Postgres) | 62 | `make test-integration` |
+| Tables, all with a row-level security policy | 12 | `\dp` in psql |
+| HTTP endpoints | 19 | `curl localhost:8080/openapi.json` |
 | Token contrast pairings at or above WCAG AA | 44 of 44 | `cd apps/web && npm run check:contrast` |
-| Python source lines, excluding tests | 2909 | `find packages services evals -name '*.py' -path '*/src/*' \| xargs wc -l` |
+| Python source lines, excluding tests | 8302 | `find packages services evals -name '*.py' -not -path '*/tests/*' \| xargs wc -l` |
+| TypeScript and CSS lines, excluding generated types | 2904 | `find apps/web/src -name '*.ts*' -o -name '*.css'` |
+
+**What is not measured, and matters more:** whether the fit score agrees with human
+judgement, and whether Gemini's extraction beats the rule-based baseline. Both need
+credentials. Both are the first thing I will run when they exist.
 
 The eval suite is the point of this project and it does not exist yet. When it does,
 `make eval` writes `evals/reports/latest.md` and a JSON summary, and this section
@@ -280,16 +289,27 @@ and `gcloud` has no credentials on my machine, so `make sandbox-check` currently
 AlloyDB or Vertex AI is unavailable in the sandbox, the plan changes rather than the
 schedule slipping.
 
-**Nothing is ingested yet.** M1 gave the system a schema, tenant isolation and
-authentication, so `GET /me` works end to end against a real Postgres. There is still
-no way to add a job posting, which is M2, and no Gemini call anywhere in the codebase.
+**No Gemini call has ever run.** The Vertex client is written, typed and wired, and it
+has never been executed against the real service, because the sandbox project has no
+billing. Everything you can currently do locally runs on `HeuristicLlmClient`: a
+rule-based extractor and a hashed-lexical embedding space. That backend exists so the
+product works with no credentials and so the eval has a floor to measure against
+([ADR 10](docs/adr/0010-llm-boundary-and-offline-operation.md)) — it is not a stand-in
+for the model, and the interface says which one produced a score.
 
-**The outbox has no relay.** The table, its index and its policy exist; the process
-that publishes rows to Pub/Sub, and the dedicated role it will connect as, arrive with
-M2 when there are events worth publishing.
+**The fit score's agreement with human judgement is unknown.** The thresholds that turn
+a similarity into covered, partial or missing are constants with a default and have not
+been calibrated against labelled pairs. It is the number I most want and the one I am
+least willing to guess at. Until it exists, every judgement is shown beside the profile
+item that produced it, so it can be checked by eye.
 
-**The fit score's agreement with human judgement is unknown.** See above. It is the
-number I most want and the one I am least willing to guess at.
+**Tailoring, rendering and nudges are not built.** M4 and M6. The schema carries
+`artifacts` and `nudges` and neither has a writer yet.
+
+**The relay is one process, and locally it lives inside the API.** In cloud it is its
+own Cloud Run service with a Scheduler backstop; locally it runs as a background task
+because a relay, a subscription and a second process is a lot of machinery to watch a
+pasted posting appear. Both paths call the same handlers.
 
 **Responsive behaviour is not checked automatically, and it bit me.** A
 `repeat(auto-fit, minmax(16rem, 1fr))` grid contributed three 16rem tracks to the
