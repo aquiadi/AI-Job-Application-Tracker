@@ -1,0 +1,45 @@
+{
+  "source_ats": "pasted",
+  "title": "Machine Learning Engineer",
+  "company": "Halcyon",
+  "body": "Halcyon builds forecasting tools for energy traders.\n\nResponsibilities\n- Ship models to production and own them afterwards\n- Work with traders to turn intuitions into features\n\nWhat we're looking for\n- 3-5 years shipping machine learning systems\n- Strong Python and PyTorch\n- Comfortable owning a service in production\n\nBonus points\n- Time series forecasting experience\n- Familiarity with Kubernetes\n\nWe are an equal opportunity employer.",
+  "expected": {
+    "title": "Machine Learning Engineer",
+    "company": "Halcyon",
+    "seniority": "mid",
+    "experience_years_min": 3,
+    "experience_years_max": 5,
+    "requirements": [
+      {
+        "text": "3-5 years shipping machine learning systems",
+        "kind": "must"
+      },
+      {
+        "text": "Strong Python and PyTorch",
+        "kind": "must"
+      },
+      {
+        "text": "Comfortable owning a service in production",
+        "kind": "must"
+      },
+      {
+        "text": "Time series forecasting experience",
+        "kind": "nice"
+      },
+      {
+        "text": "Familiarity with Kubernetes",
+        "kind": "nice"
+      }
+    ],
+    "hard_skills": [
+      "python",
+      "pytorch",
+      "kubernetes"
+    ],
+    "responsibilities": [
+      "Ship models to production and own them afterwards",
+      "Work with traders to turn intuitions into features"
+    ]
+  },
+  "reviewed": false
+}

@@ -1,0 +1,38 @@
+{
+  "source_ats": "pasted",
+  "title": "Site Reliability Engineer",
+  "company": "Ferrous",
+  "body": "Ferrous runs payments infrastructure for marketplaces.\n\nAbout the role\n\nYou will join a team of four SREs. We are looking for someone who has run production\nsystems at scale and can bring at least four years of that experience. Familiarity with\nGo is expected, and you should be comfortable with Terraform and Kubernetes day to day.\nExperience with incident command would be a plus, though we can teach it.\n\nWe work in a hybrid pattern, three days a week in the London office.",
+  "expected": {
+    "title": "Site Reliability Engineer",
+    "company": "Ferrous",
+    "remote_policy": "hybrid",
+    "location": "London",
+    "experience_years_min": 4,
+    "requirements": [
+      {
+        "text": "At least four years running production systems at scale",
+        "kind": "must"
+      },
+      {
+        "text": "Familiarity with Go",
+        "kind": "must"
+      },
+      {
+        "text": "Comfortable with Terraform and Kubernetes day to day",
+        "kind": "must"
+      },
+      {
+        "text": "Experience with incident command",
+        "kind": "nice"
+      }
+    ],
+    "hard_skills": [
+      "go",
+      "terraform",
+      "kubernetes"
+    ],
+    "responsibilities": []
+  },
+  "reviewed": false
+}

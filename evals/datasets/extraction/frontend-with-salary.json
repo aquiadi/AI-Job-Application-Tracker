@@ -1,0 +1,47 @@
+{
+  "source_ats": "greenhouse",
+  "title": "Senior Frontend Engineer",
+  "company": "Bellwether",
+  "body": "Bellwether makes scheduling software for clinics.\n\nRequirements\n- 5 years of TypeScript and React in production\n- Experience with accessibility standards and WCAG\n- Comfortable writing and reviewing tests\n\nNice to have\n- Design system experience\n- GraphQL\n\nThe salary range for this role is $150,000 - $185,000 USD per year.\nFull-time, remote within the United States.",
+  "expected": {
+    "title": "Senior Frontend Engineer",
+    "company": "Bellwether",
+    "seniority": "senior",
+    "remote_policy": "remote",
+    "employment_type": "full_time",
+    "experience_years_min": 5,
+    "salary_min": "150000",
+    "salary_max": "185000",
+    "salary_currency": "USD",
+    "salary_period": "year",
+    "requirements": [
+      {
+        "text": "5 years of TypeScript and React in production",
+        "kind": "must"
+      },
+      {
+        "text": "Experience with accessibility standards and WCAG",
+        "kind": "must"
+      },
+      {
+        "text": "Comfortable writing and reviewing tests",
+        "kind": "must"
+      },
+      {
+        "text": "Design system experience",
+        "kind": "nice"
+      },
+      {
+        "text": "GraphQL",
+        "kind": "nice"
+      }
+    ],
+    "hard_skills": [
+      "typescript",
+      "react",
+      "graphql"
+    ],
+    "responsibilities": []
+  },
+  "reviewed": false
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "backend": "heuristic",
+    "postings": 5,
+    "schema_valid": 5,
+    "requirement_recall": 0.8261,
+    "requirement_precision": 1.0,
+    "requirement_f1": 0.9048,
+    "kind_accuracy": 1.0,
+    "field_accuracy": 0.4444,
+    "hallucinated_field_rate": 0.0,
+    "failures": []
+  },
+  {
+    "backend": "vertex",
+    "postings": 5,
+    "schema_valid": 0,
+    "requirement_recall": 0.0,
+    "requirement_precision": 0.0,
+    "requirement_f1": 0.0,
+    "kind_accuracy": 0.0,
+    "field_accuracy": 0.0,
+    "hallucinated_field_rate": 0.0,
+    "failures": [
+      "backend-payments: LlmError",
+      "data-engineer-seattle: LlmError",
+      "frontend-with-salary: LlmError",
+      "ml-engineer-no-salary: LlmError",
+      "sre-prose-requirements: LlmError"
+    ]
+  }
+]

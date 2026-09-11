@@ -1,0 +1,46 @@
+{
+  "source_ats": "greenhouse",
+  "title": "Senior Backend Engineer, Payments",
+  "company": "Northwind",
+  "body": "We are building the settlement platform that moves money for thousands of merchants.\n\nWhat you'll do\n- Own the ledger service end to end\n- Partner with compliance on reconciliation\n\nRequirements\n- 5+ years building backend services in Python or Go\n- Experience with distributed transactions and idempotent processing\n- Operating services on Kubernetes in production\n\nNice to have\n- Event streaming with Kafka or Pub/Sub\n- Authored reusable Terraform modules\n\nBenefits\n- Private medical cover\n- 28 days holiday",
+  "expected": {
+    "title": "Senior Backend Engineer, Payments",
+    "company": "Northwind",
+    "seniority": "senior",
+    "experience_years_min": 5,
+    "requirements": [
+      {
+        "text": "5+ years building backend services in Python or Go",
+        "kind": "must"
+      },
+      {
+        "text": "Experience with distributed transactions and idempotent processing",
+        "kind": "must"
+      },
+      {
+        "text": "Operating services on Kubernetes in production",
+        "kind": "must"
+      },
+      {
+        "text": "Event streaming with Kafka or Pub/Sub",
+        "kind": "nice"
+      },
+      {
+        "text": "Authored reusable Terraform modules",
+        "kind": "nice"
+      }
+    ],
+    "hard_skills": [
+      "python",
+      "go",
+      "kubernetes",
+      "kafka",
+      "terraform"
+    ],
+    "responsibilities": [
+      "Own the ledger service end to end",
+      "Partner with compliance on reconciliation"
+    ]
+  },
+  "reviewed": false
+}

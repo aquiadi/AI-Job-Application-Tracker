@@ -1,0 +1,44 @@
+{
+  "source_ats": "lever",
+  "title": "Staff Data Engineer",
+  "company": "Mercator",
+  "body": "Mercator moves supply chain data for freight forwarders.\n\nWhat you will do\n- Design the ingestion layer for carrier feeds\n- Own data quality SLAs\n\nRequired Qualifications\n- Minimum 6 years building data pipelines\n- Deep SQL and Python\n- Production experience with Airflow or dbt\n\nNice to have\n- Exposure to Snowflake or BigQuery\n\nWorkplace type: hybrid",
+  "expected": {
+    "title": "Staff Data Engineer",
+    "company": "Mercator",
+    "seniority": "staff",
+    "remote_policy": "hybrid",
+    "experience_years_min": 6,
+    "requirements": [
+      {
+        "text": "Minimum 6 years building data pipelines",
+        "kind": "must"
+      },
+      {
+        "text": "Deep SQL and Python",
+        "kind": "must"
+      },
+      {
+        "text": "Production experience with Airflow or dbt",
+        "kind": "must"
+      },
+      {
+        "text": "Exposure to Snowflake or BigQuery",
+        "kind": "nice"
+      }
+    ],
+    "hard_skills": [
+      "sql",
+      "python",
+      "airflow",
+      "dbt",
+      "snowflake",
+      "bigquery"
+    ],
+    "responsibilities": [
+      "Design the ingestion layer for carrier feeds",
+      "Own data quality SLAs"
+    ]
+  },
+  "reviewed": false
+}

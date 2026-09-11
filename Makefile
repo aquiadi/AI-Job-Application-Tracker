@@ -123,6 +123,10 @@ migration: ## Create a migration: make migration m="add nudges table"
 # Google Cloud
 # --------------------------------------------------------------------------
 
+.PHONY: eval
+eval: ## Score extraction against the labelled dataset
+	$(PY) python -m jobtrack_evals.run
+
 .PHONY: cost-report
 cost-report: ## What has actually been spent on model calls, from llm_calls
 	$(PY) python scripts/cost_report.py
