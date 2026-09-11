@@ -47,12 +47,9 @@ class TenantContextError(RuntimeError):
     """Raised when a session would be opened without a tenant, or with a bad one."""
 
 
-def _local_url(settings: Settings) -> str:
+def _local_url(settings: Settings, *, user: str, password: str) -> str:
     db = settings.database
-    return (
-        f"postgresql+asyncpg://{db.app_user}:{db.password.get_secret_value()}"
-        f"@{db.host}:{db.port}/{db.name}"
-    )
+    return f"postgresql+asyncpg://{user}:{password}@{db.host}:{db.port}/{db.name}"
 
 
 @dataclass(slots=True)
@@ -98,7 +95,14 @@ def create_database(settings: Settings) -> Database:
     }
 
     if settings.environment is Environment.LOCAL:
-        engine = create_async_engine(_local_url(settings), **common)
+        engine = create_async_engine(
+            _local_url(
+                settings,
+                user=settings.database.app_user,
+                password=settings.database.password.get_secret_value(),
+            ),
+            **common,
+        )
         return Database(engine=engine, sessions=create_sessionmaker(engine))
 
     # Imported here rather than at module scope: the connector opens background refresh
@@ -167,3 +171,50 @@ async def privileged_session(
     """
     async with factory() as session, session.begin():
         yield session
+
+
+def create_relay_database(settings: Settings) -> Database:
+    """Build an engine that connects as the relay role.
+
+    A separate engine rather than a separate session on the shared one, because the
+    role is a property of the connection. The relay's authority — reading events across
+    every tenant — exists only on connections opened as `jobtrack_relay`, and that role
+    holds SELECT and UPDATE on `outbox` and no grant whatsoever on any other table.
+    A relay bug therefore cannot reach a resume; it gets a permission error.
+    """
+    common: dict[str, Any] = {
+        # The relay is one process doing one query on a timer. A large pool would be
+        # idle connections held against a database that charges for them.
+        "pool_size": 2,
+        "max_overflow": 0,
+        "pool_recycle": settings.database.pool_recycle_seconds,
+        "pool_pre_ping": True,
+        "echo": False,
+    }
+
+    if settings.environment is Environment.LOCAL:
+        engine = create_async_engine(
+            _local_url(
+                settings,
+                user=settings.database.relay_user,
+                password=settings.database.relay_password.get_secret_value(),
+            ),
+            **common,
+        )
+        return Database(engine=engine, sessions=create_sessionmaker(engine))
+
+    from google.cloud.alloydb.connector import AsyncConnector, IPTypes
+
+    connector = AsyncConnector(enable_iam_auth=True, ip_type=IPTypes.PRIVATE)
+
+    async def connect() -> Any:
+        return await connector.connect(
+            settings.database.alloydb_instance_uri,
+            "asyncpg",
+            user=settings.database.relay_user,
+            db=settings.database.name,
+            enable_iam_auth=True,
+        )
+
+    engine = create_async_engine("postgresql+asyncpg://", async_creator=connect, **common)
+    return Database(engine=engine, sessions=create_sessionmaker(engine), _connector=connector)

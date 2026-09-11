@@ -59,6 +59,18 @@ class ConflictError(ApiError):
     code = "conflict"
 
 
+class UnprocessableInputError(ApiError):
+    """The input was well-formed but could not be used.
+
+    A link to a board with no adapter, a posting that has been taken down, a paste
+    too short to be a description. The detail is written to be shown to the person
+    who typed it, because in every one of those cases they are the one who can fix it.
+    """
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = "unprocessable_input"
+
+
 class ErrorBody(BaseModel):
     """The shape of every error response."""
 

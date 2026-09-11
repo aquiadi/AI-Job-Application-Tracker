@@ -17,12 +17,13 @@ from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
 from jobtrack_api.errors import install_error_handlers
-from jobtrack_api.routers import me
+from jobtrack_api.routers import jobs, me
 from jobtrack_core import __version__
 from jobtrack_core.auth import FirebaseTokenVerifier
 from jobtrack_core.config import Settings, get_settings
-from jobtrack_core.db.session import create_database
 from jobtrack_core.logs import configure_logging, get_logger
+from jobtrack_core.pipeline import handlers
+from jobtrack_core.runtime import build_runtime
 
 logger = get_logger(__name__)
 
@@ -42,12 +43,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings: Settings = get_settings()
     configure_logging(settings)
 
+    runtime = build_runtime(settings)
     app.state.settings = settings
-    app.state.database = create_database(settings)
+    app.state.runtime = runtime
+    app.state.database = runtime.database
     app.state.verifier = FirebaseTokenVerifier(
         settings.project_id,
         emulator_host=settings.auth_emulator_host or None,
     )
+
+    # Local development runs the whole pipeline in one process: the relay drains the
+    # outbox into an in-process publisher that calls the handlers directly. In cloud
+    # both are separate services, because a relay inside the API stops when the API
+    # scales to zero — which is precisely when a backlog would be building.
+    if settings.is_local:
+        handlers.register(runtime, runtime.publisher)
+        runtime.start_relay()
 
     logger.info(
         "service_starting",
@@ -56,11 +67,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         environment=settings.environment.value,
         region=settings.region,
         auth_emulator=bool(settings.auth_emulator_host),
+        llm_backend=settings.llm_backend,
     )
     try:
         yield
     finally:
-        await app.state.database.close()
+        await runtime.close()
         logger.info("service_stopping", service=SERVICE)
 
 
@@ -82,6 +94,7 @@ app = FastAPI(
 
 install_error_handlers(app)
 app.include_router(me.router)
+app.include_router(jobs.router)
 
 
 @app.get("/healthz", tags=["health"], summary="Liveness check")

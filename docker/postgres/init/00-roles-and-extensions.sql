@@ -8,6 +8,12 @@
 --
 --   jobtrack_owner  owns the schema; Alembic migrations run as this role
 --   jobtrack_app    the application's role; owns nothing, holds only DML grants
+--   jobtrack_relay  the outbox relay; reads across every tenant, and nothing else
+--
+-- The relay needs its own role because its job is the one thing the tenant policy
+-- forbids: reading rows belonging to every user. Giving that to jobtrack_app would
+-- widen the application's own access to the same degree. Its policy covers `outbox`
+-- and no other table, so a bug in the relay cannot reach a resume.
 --
 -- In AlloyDB, jobtrack_app is an IAM principal and has no password. Locally it needs
 -- one, and this file is the password: a fixture committed on purpose, never used
@@ -15,6 +21,7 @@
 
 CREATE ROLE jobtrack_owner WITH LOGIN PASSWORD 'jobtrack' NOCREATEDB NOCREATEROLE NOSUPERUSER;
 CREATE ROLE jobtrack_app   WITH LOGIN PASSWORD 'jobtrack' NOCREATEDB NOCREATEROLE NOSUPERUSER;
+CREATE ROLE jobtrack_relay WITH LOGIN PASSWORD 'jobtrack' NOCREATEDB NOCREATEROLE NOSUPERUSER;
 
 CREATE DATABASE jobtrack OWNER jobtrack_owner;
 
@@ -34,6 +41,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 ALTER SCHEMA public OWNER TO jobtrack_owner;
 GRANT USAGE ON SCHEMA public TO jobtrack_app;
+GRANT USAGE ON SCHEMA public TO jobtrack_relay;
 
 \connect jobtrack_test
 
@@ -44,3 +52,4 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 ALTER SCHEMA public OWNER TO jobtrack_owner;
 GRANT USAGE ON SCHEMA public TO jobtrack_app;
+GRANT USAGE ON SCHEMA public TO jobtrack_relay;

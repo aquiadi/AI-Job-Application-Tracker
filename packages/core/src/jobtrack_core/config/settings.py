@@ -56,6 +56,9 @@ class DatabaseSettings(BaseSettings):
     # The schema owner. Alembic connects as this and nothing else does, so a bug in
     # request-handling code cannot reach a connection that RLS does not constrain.
     owner_user: str = "jobtrack_owner"
+    # The outbox relay. Its policy lets it read every tenant's events, and its only
+    # grants are SELECT and UPDATE on `outbox`, so that reach ends at one table.
+    relay_user: str = "jobtrack_relay"
 
     # Local only.
     host: str = "127.0.0.1"
@@ -64,6 +67,7 @@ class DatabaseSettings(BaseSettings):
     port: int = 5433
     password: SecretStr = SecretStr("jobtrack")
     owner_password: SecretStr = SecretStr("jobtrack")
+    relay_password: SecretStr = SecretStr("jobtrack")
 
     # Cloud only. Format: projects/P/locations/R/clusters/C/instances/I
     alloydb_instance_uri: str = ""

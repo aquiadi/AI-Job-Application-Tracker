@@ -108,6 +108,7 @@ class NudgeOutcome(enum.StrEnum):
 
 class LlmOperation(enum.StrEnum):
     EXTRACT_JD = "extract_jd"
+    EMBED = "embed"
     PARSE_RESUME = "parse_resume"
     TAILOR = "tailor"
     NARRATIVE = "narrative"

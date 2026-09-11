@@ -14,10 +14,12 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobtrack_api.errors import UnauthenticatedError
 from jobtrack_core.auth import FirebaseTokenVerifier, InvalidTokenError, VerifiedIdentity
+from jobtrack_core.db.models import User
 from jobtrack_core.db.session import Database, tenant_session
 
 # auto_error=False so a missing header produces our own 401 with a WWW-Authenticate
@@ -58,10 +60,30 @@ async def tenant_db(
     """A database session scoped to the caller, committed when the request succeeds.
 
     The transaction spans the whole handler, so a request that raises rolls back
-    everything it did — including, once there is one, the outbox row that would have
-    announced a change that did not happen.
+    everything it did — including the outbox row that would have announced a change
+    that did not happen.
+
+    The user row is created here rather than in a sign-up route, because there is no
+    sign-up: Identity Platform has already established who the person is by the time
+    the first request arrives. Doing it in this dependency rather than in `GET /me`
+    means it holds for whichever endpoint a client happens to call first — a browser
+    that restores a saved posting before it loads the account would otherwise fail on
+    a foreign key.
+
+    The cost is one `INSERT ... ON CONFLICT DO NOTHING` per request, which is a single
+    lookup on the primary key. That is worth paying to make "the user row exists"
+    an invariant of being authenticated rather than a thing each route remembers.
     """
     async with tenant_session(database.sessions, identity.user_id) as session:
+        await session.execute(
+            insert(User)
+            .values(
+                id=identity.user_id,
+                subject=identity.subject,
+                email=identity.email or "",
+            )
+            .on_conflict_do_nothing(index_elements=[User.id])
+        )
         yield session
 
 

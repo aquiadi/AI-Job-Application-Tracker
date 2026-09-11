@@ -123,6 +123,18 @@ module = ["google.cloud.alloydb.connector.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+# google-cloud-pubsub and google-cloud-storage are namespace-package members that
+# mypy cannot resolve through `from google.cloud import x`, though both import
+# correctly at runtime.
+module = [
+  "google.cloud.pubsub_v1",
+  "google.cloud.pubsub_v1.*",
+  "google.cloud.storage",
+  "google.cloud.storage.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 # google-auth ships py.typed but leaves jwt.decode, jwt.encode and the crypt signers
 # unannotated, so strict mode rejects every call into them. Narrowed to calls: their
 # arguments and return values are still checked everywhere they are used.
