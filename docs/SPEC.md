@@ -15,10 +15,10 @@ Each item is deployed to Cloud Run before the next one starts.
 | 1 | Schema, RLS with cross-tenant test, Identity Platform auth | Done, not deployed |
 | 2 | JD ingestion: Greenhouse, Lever, pasted text; extraction eval | Built, eval pending |
 | 3 | Profile import (PDF) and the deterministic fit score | Built, calibration pending |
-| 4 | Grounded tailoring, validator, PDF rendering, faithfulness eval | Not started |
+| 4 | Grounded tailoring, validator, PDF rendering | Built, faithfulness eval pending |
 | 5 | Kanban board with stage history | Done |
-| 6 | Nudges: sweep, Cloud Tasks, drafts | Not started |
-| 7 | Cost instrumentation and `make cost-report` | Not started |
+| 6 | Nudges: sweep, drafts, nothing sent | Built |
+| 7 | Cost instrumentation and `make cost-report` | Built |
 
 ---
 
@@ -299,3 +299,76 @@ time an application spent in `Saved` — where most of them die — would be unm
 
 **Terminal stages are separated from the pipeline** in the response, because they are
 outcomes rather than steps.
+
+---
+
+## M4 — Grounded tailoring
+
+### Goal
+
+A tailored resume the user can defend in an interview, because every line in it is one
+they already wrote.
+
+### Delivered
+
+**The grounding validator.** [ADR 13](adr/0013-grounded-generation-and-the-validator.md).
+Four deterministic checks over every generated bullet: it must cite at least one
+profile item, every cited id must be the user's own reviewed evidence, every number
+must appear in the cited items or the computed breakdown, and every named technology
+must appear in the cited items. A failure is regenerated once and then dropped, with
+the reason stored on the artifact and shown.
+
+**Numbers are the check that matters.** A resume is believed on its numbers, and a
+model that turns "reduced manual work" into "reduced manual work by 30%" has fabricated
+the most checkable claim on the page. Reformatting is allowed — 40,000,000 to 40M —
+because rejecting that would make the validator fight what it exists to permit.
+
+**PDF rendering, where contact details rejoin.** They are kept on separate columns and
+out of every prompt precisely so this can be the only place they appear. One column, no
+colour, no tables: an applicant tracking system reads the page before a person does.
+
+**Artifacts are versioned, not replaced**, so an earlier draft stays recoverable.
+
+### Not delivered
+
+The faithfulness eval. Measuring the rejection rate against a backend that does not
+rewrite measures nothing.
+
+---
+
+## M6 — Nudges
+
+### Goal
+
+A prompt to follow up, at a moment that is actually worth following up, that the user
+sends themselves.
+
+### Delivered
+
+**Thresholds in business days** — ten after applying, five after an interview stage,
+three after an offer. A Friday application is not stale on Sunday. `Saved` has no
+threshold: an application the user has not sent is not waiting on anyone.
+
+**One draft per wait**, guaranteed by the unique constraint on
+`(application_id, stage, stage_entered_at)` rather than by task-name deduplication,
+which only holds for a limited window.
+
+**Nothing is sent, and nothing can be.** There is no send endpoint, no mail client and
+no credentials for one. An integration test asserts that no path containing "send"
+exists in the OpenAPI document, which fails the moment someone adds one.
+
+---
+
+## M7 — Cost
+
+### Delivered
+
+`make cost-report` reads `llm_calls` and prices recorded token counts against the
+published rates, with the source URL and retrieval date printed beneath.
+
+Building it found a real bug: the report returned nothing while the table held twenty
+rows, because `FORCE ROW LEVEL SECURITY` applies to the table owner too and the only
+policy was scoped to the application role. Migration 0004 adds a read-only policy for
+the owner on `llm_calls` alone — safe because that table holds counts and timings and
+no content, which is exactly why it can have an operator view and `profile_items`
+cannot.

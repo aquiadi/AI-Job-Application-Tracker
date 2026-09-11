@@ -21,15 +21,23 @@ from __future__ import annotations
 import uuid
 from collections import OrderedDict
 
-from jobtrack_core.generate.schemas import TailoredBullet, TailoredResume, TailoredSection
+from jobtrack_core.db.enums import ProfileItemKind
+from jobtrack_core.generate.schemas import (
+    MIN_BULLET_CHARS,
+    TailoredBullet,
+    TailoredResume,
+    TailoredSection,
+)
 
 #: Bullets per tailored resume. Enough for three roles at four bullets each.
 MAX_SELECTED = 14
+#: Heading the collected skill items are gathered under.
+SKILLS_HEADING = "Skills"
 
 
 def tailor(
     *,
-    items: list[tuple[uuid.UUID, str, str | None, str | None]],
+    items: list[tuple[uuid.UUID, str, str | None, str | None, ProfileItemKind]],
     relevant_item_ids: list[uuid.UUID],
 ) -> TailoredResume:
     """Order evidence by relevance to this posting. Returns each item unchanged.
@@ -44,11 +52,14 @@ def tailor(
     reader sees first.
 
     Args:
-        items: (id, text, organisation, role) for every reviewed profile item.
+        items: (id, text, organisation, role, kind) for every reviewed profile item.
         relevant_item_ids: item ids the breakdown matched to a requirement, most
             relevant first.
     """
-    by_id = {item_id: (text, organisation, role) for item_id, text, organisation, role in items}
+    by_id = {
+        item_id: (text, organisation, role, kind)
+        for item_id, text, organisation, role, kind in items
+    }
 
     ordered: list[uuid.UUID] = []
     seen: set[uuid.UUID] = set()
@@ -56,22 +67,48 @@ def tailor(
         if item_id in by_id and item_id not in seen:
             seen.add(item_id)
             ordered.append(item_id)
-    ordered = ordered[:MAX_SELECTED]
+
+    # Skills are collected into one line rather than becoming bullets of their own. A
+    # resume lists them; and individually they are one or two words, which is shorter
+    # than a bullet is allowed to be — the schema minimum exists so a model cannot
+    # answer with fragments, and a skills row is not a fragment, it is a different
+    # kind of content.
+    skills = [item_id for item_id in ordered if by_id[item_id][3] is ProfileItemKind.SKILL]
+    prose = [item_id for item_id in ordered if by_id[item_id][3] is not ProfileItemKind.SKILL]
 
     grouped: OrderedDict[tuple[str, str | None, str | None], list[TailoredBullet]] = OrderedDict()
-    for item_id in ordered:
-        text, organisation, role = by_id[item_id]
+    for item_id in prose[:MAX_SELECTED]:
+        text, organisation, role, _ = by_id[item_id]
+        if len(text.strip()) < MIN_BULLET_CHARS:
+            # Defensive: a prose item this short is a parsing artefact, and letting it
+            # through would fail schema validation deep inside generation rather than
+            # here, where the reason is obvious.
+            continue
         heading = organisation or role or "Experience"
         grouped.setdefault((heading, organisation, role), []).append(
             TailoredBullet(text=text, source_item_ids=[item_id])
         )
 
+    sections = [
+        TailoredSection(heading=heading, organisation=organisation, role=role, bullets=bullets)
+        for (heading, organisation, role), bullets in grouped.items()
+    ]
+
+    if skills:
+        joined = ", ".join(by_id[item_id][0] for item_id in skills)
+        if len(joined) >= MIN_BULLET_CHARS:
+            # Cites every skill row it was built from, so the validator can check it
+            # the same way it checks any other bullet.
+            sections.append(
+                TailoredSection(
+                    heading=SKILLS_HEADING,
+                    bullets=[TailoredBullet(text=joined, source_item_ids=skills)],
+                )
+            )
+
     return TailoredResume(
         # No summary: writing one would mean composing a sentence from several items,
         # which is the part this cannot do without inventing the connective tissue.
         summary=None,
-        sections=[
-            TailoredSection(heading=heading, organisation=organisation, role=role, bullets=bullets)
-            for (heading, organisation, role), bullets in grouped.items()
-        ],
+        sections=sections,
     )

@@ -16,22 +16,26 @@ Built for the AIM Code Kitchen audition on Google Cloud. Deadline 30 September 2
 
 ## Status
 
-I am building this in order. Four milestones are finished and the product runs end to
-end on a laptop — sign in, paste a posting, see it scored against your own history,
-move it through the pipeline — with no Google Cloud credentials and nothing to pay for.
+Every milestone is built. The product runs end to end on a laptop — sign in, import a
+resume, paste a posting, see which requirements and skills you match and which you do
+not, generate a tailored resume that cannot cite anything you did not write, track the
+application, and draft a follow-up when it stalls — with no Google Cloud credentials
+and nothing to pay for.
 
-Nothing is deployed yet. I would rather this table be accurate than flattering.
+What is missing is not code. It is a billing account: no Gemini call has ever run, so
+every quality number this project exists to produce is still unmeasured. I would rather
+this table be accurate than flattering.
 
 | # | Milestone | State |
 |---|---|---|
 | 0 | Scaffold, tooling, design system, sandbox verification | **Done** |
 | 1 | Schema, row-level security with cross-tenant test, Identity Platform auth | **Done**, not deployed |
-| 2 | Ingestion: Greenhouse, Lever, pasted text; extraction eval over 15 labelled JDs | **Built**, eval needs credentials |
-| 3 | Profile import from PDF, deterministic fit score, threshold calibration | **Built**, calibration needs credentials |
-| 4 | Grounded tailoring, grounding validator, PDF rendering, faithfulness eval | Next |
+| 2 | Ingestion: Greenhouse, Lever, pasted text; extraction eval | **Built**. Eval runs; 5 of 15 postings labelled, and Vertex has never answered |
+| 3 | Profile import from PDF, deterministic fit score, skills gap | **Built**. Thresholds are defaults, not calibrated |
+| 4 | Grounded tailoring, grounding validator, PDF rendering | **Built**. Faithfulness eval needs credentials |
 | 5 | Kanban board with stage history | **Done** |
-| 6 | Follow-up nudges: Scheduler, sweep, Cloud Tasks, drafts | Not started |
-| 7 | Cost instrumentation and `make cost-report` | Not started |
+| 6 | Follow-up nudges: sweep, drafts, nothing sent | **Built**. Cloud Scheduler wiring needs a project |
+| 7 | Cost instrumentation and `make cost-report` | **Built**. Reports zero, honestly |
 
 Everything below describes the system as designed. Where a section describes something
 that does not exist yet, it says so. `docs/SPEC.md` records what each milestone
@@ -234,13 +238,16 @@ going to invent them in the meantime.
 
 | Measurement | Value | Command |
 |---|---|---|
-| Unit tests passing | 209 | `make test` |
-| Integration tests passing (real Postgres) | 62 | `make test-integration` |
+| Unit tests passing | 296 | `make test` |
+| Integration tests passing (real Postgres) | 77 | `make test-integration` |
 | Tables, all with a row-level security policy | 12 | `\dp` in psql |
-| HTTP endpoints | 19 | `curl localhost:8080/openapi.json` |
+| HTTP endpoints | 25 | `curl localhost:8080/openapi.json` |
 | Token contrast pairings at or above WCAG AA | 44 of 44 | `cd apps/web && npm run check:contrast` |
-| Python source lines, excluding tests | 8302 | `find packages services evals -name '*.py' -not -path '*/tests/*' \| xargs wc -l` |
-| TypeScript and CSS lines, excluding generated types | 2904 | `find apps/web/src -name '*.ts*' -o -name '*.css'` |
+| Python source lines, excluding tests | 10568 | `find packages services evals scripts -name '*.py' -not -path '*/tests/*' \| xargs wc -l` |
+| TypeScript and CSS lines, excluding generated types | 3492 | `find apps/web/src -name '*.ts*' -o -name '*.css'` |
+| Extraction recall, rule-based baseline | 0.83 | `make eval` |
+| Extraction hallucinated-field rate, baseline | 0.00 | `make eval` |
+| Model spend to date | $0.00 | `make cost-report` |
 
 **What is not measured, and matters more:** whether the fit score agrees with human
 judgement, and whether Gemini's extraction beats the rule-based baseline. Both need
@@ -283,33 +290,37 @@ lists Gemini Embedding on the global endpoint only.
 
 ## What does not work yet, and what I would change
 
-**Nothing is deployed.** There is no live URL. The sandbox project is not configured
-and `gcloud` has no credentials on my machine, so `make sandbox-check` currently exits
-3 at the prerequisite stage. That check is the first thing that has to pass, because if
-AlloyDB or Vertex AI is unavailable in the sandbox, the plan changes rather than the
-schedule slipping.
-
-**No Gemini call has ever run.** The Vertex client is written, typed and wired, and it
-has never been executed against the real service, because the sandbox project has no
-billing. Everything you can currently do locally runs on `HeuristicLlmClient`: a
-rule-based extractor and a hashed-lexical embedding space. That backend exists so the
-product works with no credentials and so the eval has a floor to measure against
-([ADR 10](docs/adr/0010-llm-boundary-and-offline-operation.md)) — it is not a stand-in
+**No Gemini call has ever run.** This is the one that matters, and everything below is
+downstream of it. The Vertex client is written, typed, wired and unexercised, because
+the sandbox project has no billing. What runs locally is `HeuristicLlmClient`: a
+rule-based extractor and a hashed-lexical embedding space, which exists so the product
+works with no credentials and so the eval has a floor to measure against
+([ADR 10](docs/adr/0010-llm-boundary-and-offline-operation.md)). It is not a stand-in
 for the model, and the interface says which one produced a score.
 
-**The fit score's agreement with human judgement is unknown.** The thresholds that turn
-a similarity into covered, partial or missing are constants with a default and have not
-been calibrated against labelled pairs. It is the number I most want and the one I am
-least willing to guess at. Until it exists, every judgement is shown beside the profile
-item that produced it, so it can be checked by eye.
+**So none of the quality numbers exist.** `make eval` reports a recall of 0.83 for the
+baseline and `did not run` for Vertex. The fit thresholds are defaults rather than
+calibrated against labelled pairs. The grounding validator's rejection rate is
+untested against a model that actually rewrites, which is the only interesting version
+of that measurement. Five of the fifteen labelled postings exist, and all five are
+marked unreviewed because I wrote the labels and the extractor.
 
-**Tailoring, rendering and nudges are not built.** M4 and M6. The schema carries
-`artifacts` and `nudges` and neither has a writer yet.
+**The container images have never been built.** Their inputs are verified — every path
+they copy exists and `uv sync --frozen` resolves — and no `docker build` has run, on a
+machine with 2.5 GB free. They are the most likely thing here to need a second attempt.
 
-**The relay is one process, and locally it lives inside the API.** In cloud it is its
-own Cloud Run service with a Scheduler backstop; locally it runs as a background task
-because a relay, a subscription and a second process is a lot of machinery to watch a
-pasted posting appear. Both paths call the same handlers.
+**Nothing is deployed.** `make sandbox-check` is the first thing to run once there is
+billing, because if AlloyDB or Vertex is unavailable in the project the plan changes
+rather than the schedule slipping.
+
+**Two things I would change with more time.** The lexical arm of the hybrid retrieval
+was silently dead for its entire life — `plainto_tsquery` ANDs its terms, so it matched
+nothing, and the fused result of one working arm looks exactly like a working fusion. I
+found it by reading a page, not from a test. The lesson I would apply is to assert on
+each arm's contribution rather than only on the fused output. Second, the heuristic
+backend is close to the line ADR 10 draws: it is meant to be a floor, and every
+improvement I make to it makes the model's contribution look smaller. It needs to stop
+getting better.
 
 **Responsive behaviour is not checked automatically, and it bit me.** A
 `repeat(auto-fit, minmax(16rem, 1fr))` grid contributed three 16rem tracks to the

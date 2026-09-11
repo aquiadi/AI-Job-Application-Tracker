@@ -289,3 +289,15 @@
   flex-direction: column;
   gap: var(--space-2);
 }
+
+/* A gap where the skill is listed but unevidenced. Marked differently from a plain
+   gap because it is the one the reader can close in a minute. */
+.gapListed {
+  font-size: var(--text-small);
+  color: var(--ink-muted);
+  line-height: var(--leading-body);
+  max-width: var(--measure);
+  border-left: var(--border-emphasis) solid var(--rule-strong);
+  padding-left: var(--space-5);
+  margin: 0;
+}

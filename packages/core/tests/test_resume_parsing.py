@@ -102,6 +102,26 @@ class TestEmployerAttribution:
         assert ledger.organisation == "Northwind Payments"
         assert kafka.organisation == "Helios Data"
 
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "Northwind Payments - Staff Software Engineer",
+            "Northwind Payments — Staff Software Engineer",
+            "Northwind Payments, Staff Software Engineer",
+            "Northwind Payments | Staff Software Engineer",
+            "Staff Software Engineer at Northwind Payments",
+        ],
+    )
+    def test_every_common_separator_is_read(self, line: str) -> None:
+        # A plain hyphen is the commonest of these and was the one missing: a resume
+        # exported to PDF with Latin-1 fonts has no em dash in it at all.
+        items = parse(f"EXPERIENCE\n{line}\n- Wrote the ledger service").items
+        bullets = [item for item in items if item.kind is ProfileItemKind.EXPERIENCE_BULLET]
+
+        assert bullets, line
+        assert bullets[0].organisation == "Northwind Payments", line
+        assert bullets[0].role == "Staff Software Engineer", line
+
     def test_both_separator_styles_are_read(self, parsed: list[ParsedItem]) -> None:
         # An em dash with spaces, and a comma with none.
         bullets = of(parsed, ProfileItemKind.EXPERIENCE_BULLET)

@@ -117,3 +117,17 @@ It is a floor and never a ceiling — shared tokens cannot produce `covered`, be
 sharing a word is not meeting the requirement. It is also the argument this ADR already
 makes for having a lexical arm, applied to the judgement rather than only to the
 ranking.
+
+**A bare skill row is not evidence for a requirement.** Skill-kind items are excluded
+from both retrieval arms. The two panels answer different questions — the skills gap
+asks "do you list this technology", and the requirement match asks "what have you done
+that shows this" — and a one-word row reading "Python" is a true answer to the first
+and a misleading answer to the second. It also *wins*: a short row scores highly in
+both arms, because a concentrated vector and a dense tsvector each reward brevity, so
+it displaces the bullet that actually demonstrates the experience.
+
+Excluding it produced the most useful thing the interface says. A requirement can now
+be a gap while the skill it names is in the profile, and the page says exactly that:
+*you list Python as a skill, but nothing you have described shows it*. That is the
+state a recruiter finds when they ask about your Python work, and it is closeable in a
+minute.

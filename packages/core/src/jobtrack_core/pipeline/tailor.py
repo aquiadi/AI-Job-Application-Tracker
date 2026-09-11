@@ -177,7 +177,7 @@ async def _generate(
         from jobtrack_core.llm.heuristic.tailor import tailor
 
         document = tailor(
-            items=[(item.id, item.text, item.organisation, item.role) for item in items],
+            items=[(item.id, item.text, item.organisation, item.role, item.kind) for item in items],
             relevant_item_ids=[
                 match.evidence_item_id
                 for match in breakdown.matches

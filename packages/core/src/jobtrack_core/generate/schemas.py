@@ -14,6 +14,10 @@ from pydantic import BaseModel, ConfigDict, Field
 #: A tailored resume longer than this is not tailored.
 MAX_BULLETS = 24
 MAX_BULLET_CHARS = 400
+#: Short enough to allow a terse line, long enough that a model cannot answer with a
+#: fragment. A skills row is exempt by being assembled into one line rather than by
+#: lowering this.
+MIN_BULLET_CHARS = 10
 
 
 class TailoredBullet(BaseModel):
@@ -21,7 +25,7 @@ class TailoredBullet(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    text: str = Field(min_length=10, max_length=MAX_BULLET_CHARS)
+    text: str = Field(min_length=MIN_BULLET_CHARS, max_length=MAX_BULLET_CHARS)
     source_item_ids: list[uuid.UUID] = Field(
         min_length=1,
         description=(

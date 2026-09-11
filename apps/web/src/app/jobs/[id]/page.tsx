@@ -57,6 +57,26 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
     }
   }
 
+  /**
+   * A requirement is a gap, but the skill it names is in the profile's skills list.
+   *
+   * That is the most actionable thing this page can say: the reader claims the
+   * technology and has described no work that shows it, which is exactly what a
+   * recruiter asking "tell me about your Python work" will find. The two panels are
+   * answering different questions rather than disagreeing, and saying so in the gap
+   * is clearer than leaving the reader to notice it.
+   */
+  function listedButUnevidenced(requirement: string): string | null {
+    if (!score) return null;
+    const listed = score.skills.have.find((entry) =>
+      new RegExp(
+        `(?<![\\w.+#/-])${entry.skill.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\w.+#-])`,
+        "i",
+      ).test(requirement),
+    );
+    return listed ? listed.skill : null;
+  }
+
   async function download(artifactId: string) {
     try {
       const url = await api.artifactPdf(artifactId);
@@ -180,6 +200,12 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
                       </p>
                       {match.evidence ? (
                         <p className={styles.evidence}>{match.evidence}</p>
+                      ) : listedButUnevidenced(match.requirement) ? (
+                        <p className={styles.gapListed}>
+                          You list <strong>{listedButUnevidenced(match.requirement)}</strong> as a
+                          skill, but nothing you have described shows it. Add a line about what you
+                          built with it.
+                        </p>
                       ) : (
                         <p className={styles.gap}>Nothing in your profile covers this.</p>
                       )}

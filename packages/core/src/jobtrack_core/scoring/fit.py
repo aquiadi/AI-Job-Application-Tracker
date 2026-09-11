@@ -106,6 +106,15 @@ class FitScore:
 # One statement rather than a loop in Python: the whole comparison stays inside a
 # single transaction under the same row-level security policy as everything else, and
 # the lateral joins let the HNSW and GIN indexes do the retrieval.
+#
+# Skill rows are excluded from both arms, and that is a product decision rather than a
+# performance one. The two panels answer different questions: the skills gap asks "do
+# you list this technology", and this asks "what have you done that shows this". A
+# one-word row reading "Python" is a true answer to the first and a misleading answer
+# to the second — it looks like the system found proof of five years when it found a
+# keyword. Worse, a short row scores *highly* in both arms, because a concentrated
+# vector and a dense tsvector both reward brevity, so without this it wins over the
+# bullet that actually demonstrates the experience.
 _MATCH_SQL = text(
     """
     WITH req AS (
@@ -122,7 +131,7 @@ _MATCH_SQL = text(
         CROSS JOIN LATERAL (
             SELECT p.id AS item_id, 1 - (p.embedding <=> r.embedding) AS similarity
             FROM profile_items p
-            WHERE p.embedding IS NOT NULL AND p.reviewed
+            WHERE p.embedding IS NOT NULL AND p.reviewed AND p.kind <> 'skill'
             ORDER BY p.embedding <=> r.embedding
             LIMIT :candidates
         ) d
@@ -147,7 +156,8 @@ _MATCH_SQL = text(
         CROSS JOIN LATERAL (
             SELECT p.id AS item_id, ts_rank_cd(p.search, q.query) AS score
             FROM profile_items p
-            WHERE p.reviewed AND q.query IS NOT NULL AND p.search @@ q.query
+            WHERE p.reviewed AND p.kind <> 'skill'
+              AND q.query IS NOT NULL AND p.search @@ q.query
             ORDER BY score DESC
             LIMIT :candidates
         ) l

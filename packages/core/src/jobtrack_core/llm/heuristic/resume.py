@@ -73,7 +73,12 @@ _ROLE_WORDS = re.compile(
 # Engineer" is at least as common as a spaced dash, and requiring symmetry
 # silently left every such role unrecognised — which meant the role above it
 # stayed attached to bullets that belonged to a different employer.
-_SEPARATOR = re.compile(r"\s*,\s+|\s+(?:—|–|\||·|•)\s+|\s+\bat\b\s+", re.I)  # noqa: RUF001
+_SEPARATOR = re.compile(
+    r"\s*,\s+"  # "Helios Data, Senior Engineer" — no space before the comma
+    r"|\s+(?:-|—|–|\||·|•)\s+"  # noqa: RUF001 - a spaced dash of any kind
+    r"|\s+\bat\b\s+",  # "Senior Engineer at Helios Data"
+    re.I,
+)
 
 _MONTH = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*"
 _DATE_RANGE = re.compile(
