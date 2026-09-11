@@ -125,3 +125,20 @@ re-embed.
 rather than a test in `make check`. The browser drive that verified the M2–M5 flow is a
 scratch script, not a committed suite; making it one means Playwright in CI, which
 means the deploy pipeline that is itself deferred.
+
+## Unverified, and honestly so
+
+**The container images have never been built.** `services/api/Dockerfile`,
+`services/worker/Dockerfile` and `apps/web/Dockerfile` are written and their inputs are
+checked — every path they `COPY` exists, and `uv sync --frozen --no-dev` resolves — but
+no `docker build` has run against them. The machine this was developed on had 2.5 GB of
+free disk at the time, and filling a developer's disk is a worse outcome than an
+unverified Dockerfile.
+
+They are the most likely thing in the repository to need a second attempt. The failure
+modes to expect are the ordinary ones: a workspace member path that resolves
+differently inside the build context, and `next build` needing an environment variable
+that is set locally and not passed as a build argument.
+
+`scripts/deploy.sh` builds them with Cloud Build rather than locally, so the first real
+build will happen there, where disk is not the constraint.

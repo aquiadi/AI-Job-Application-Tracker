@@ -134,3 +134,11 @@ nudge-sweep: ## Draft follow-ups for applications that have gone quiet
 .PHONY: sandbox-check
 sandbox-check: ## Verify the sandbox project can run this system
 	./scripts/sandbox_check.sh
+
+.PHONY: deploy
+deploy: ## Build and deploy api and web to Cloud Run
+	./scripts/deploy.sh
+
+.PHONY: teardown
+teardown: ## Delete everything this project created in the sandbox project
+	./scripts/teardown.sh

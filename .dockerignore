@@ -1,18 +1,24 @@
-**/.git
-**/.venv
-**/node_modules
-**/.next
+# Kept small on purpose: the build context is uploaded to Cloud Build on every deploy,
+# and .venv plus node_modules is several hundred megabytes of files the image rebuilds
+# from the lockfiles anyway.
+.git
+.venv
+node_modules
+apps/web/.next
+apps/web/node_modules
 **/__pycache__
-**/*.py[cod]
-**/.mypy_cache
-**/.pytest_cache
-**/.ruff_cache
-**/.DS_Store
-**/.env
-**/.env.*
-!**/.env.example
+**/*.pyc
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.localstore
+htmlcov
+.coverage
+coverage.xml
+*.md
+!prompts/*.md
+.env
+.env.*
+!.env.example
 docs/
-evals/
-infra/
-CLAUDE.md
-.claude/
+evals/reports/
